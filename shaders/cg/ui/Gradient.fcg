@@ -1,0 +1,28 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+struct FragmentInput_t
+{
+    float3 color : TEXCOORD2;
+    float2 texCoord : TEXCOORD0;
+};
+
+struct FragmentOutput_t
+{
+    float4 color : COLOR;
+};
+
+FragmentOutput_t main(FragmentInput_t input)
+{
+    FragmentOutput_t output;
+    float3 red = float3(1.0, 0.0, 0.0);
+    float3 green = float3(0.0, 1.0, 0.0);
+    output.color = float4(lerp(red, green, input.texCoord.y), 1.0);
+
+    return output;
+}

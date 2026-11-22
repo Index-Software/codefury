@@ -1,0 +1,57 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Visual Studio Code
+.vscode
+
+# Gitignore
+gitignore/
+.old
+
+# Build
+build/
+bin/
+
+# Tools
+tools/slang/
+tools/msdf-atlas-gen/
+tools/cgcomp/
+
+# Shaders
+shaders/__pycache__
+
+# Python
+__pycache__/
+
+# WIP
+src/engine/io/

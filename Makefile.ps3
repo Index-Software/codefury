@@ -1,0 +1,147 @@
+.SUFFIXES:
+
+ifeq ($(strip $(PSL1GHT)),)
+$(error "Please set PSL1GHT in your environment")
+endif
+
+include $(PSL1GHT)/ppu_rules
+
+TARGET := codefury
+BUILD := build/bin/ps3
+OBJDIR := build/obj/ps3
+#src/engine/io/cfm
+SOURCES := src/app src/engine src/engine/config src/engine/ecs src/engine/ecs/components \
+            src/engine/scene \
+            src/engine/input src/engine/input/ps3 src/engine/input/controllers \
+            src/engine/renderer src/engine/renderer/shader src/engine/renderer/material \
+            src/engine/renderer/texture src/engine/renderer/text \
+            src/engine/renderer/ibl \
+            src/engine/renderer/ui src/engine/renderer/passes \
+            src/engine/utils src/engine/debug src/engine/wren src/engine/wren/wrenbind \
+            src/engine/wren/wrenbind/generated \
+            thirdparty/mathsfury \
+            thirdparty/gcmgl/src \
+            thirdparty/gcmgl/src/renderer thirdparty/gcmgl/src/renderer/gcm \
+            thirdparty/gcmgl/src/renderer/gcm/spu \
+            thirdparty/gcmgl/src/window thirdparty/gcmgl/src/window/ps3 \
+            thirdparty/gcmgl/thirdparty/rsxutil \
+            thirdparty/gcmgl/src/utils \
+            thirdparty/gcmgl/thirdparty/OffsetAllocator
+INCLUDES := . src src/engine public \
+            thirdparty/gcmgl/public thirdparty/gcmgl/src \
+            thirdparty thirdparty/gcmgl/thirdparty thirdparty/mathsfury \
+            thirdparty/gcmgl/src/renderer/gcm/spu \
+            thirdparty/wrenbind thirdparty/wrenbind/include
+
+SPU_SRCDIR := thirdparty/gcmgl/src/renderer/gcm/spu
+SPU_BUILD_DIR := $(OBJDIR)/spu
+
+SPU_BATCH_TRANSFORM_JOB_ELF := $(SPU_BUILD_DIR)/SPUBatchTransformJob.elf
+SPU_BATCH_TRANSFORM_JOB_OBJ := $(OBJDIR)/SPUBatchTransformJob_spu.o
+SPU_BATCH_TRANSFORM_JOB_SRC := $(SPU_SRCDIR)/SPUBatchTransformJob.c
+
+SPU_CC := $(PS3DEV)/spu/bin/spu-gcc
+SPU_CFLAGS := -O2 -Wall -I$(SPU_SRCDIR) -I/usr/local/ps3dev/spu/include -Ipublic -DPLATFORM_PS3
+
+BUILD_TYPE ?= Release
+ifeq ($(BUILD_TYPE),Debug)
+	OPT_FLAGS = -O0 -g
+else
+	OPT_FLAGS = -O2
+endif
+
+CFLAGS = $(OPT_FLAGS) -Wall -Wno-unused-but-set-variable -mcpu=cell -maltivec $(MACHDEP) $(INCLUDE) -DPLATFORM_PS3
+CXXFLAGS = $(CFLAGS) -std=gnu++98
+LDFLAGS = $(MACHDEP) -Wl,-Map,$@.map
+
+APP ?= Template
+
+ifeq ($(APP),Demo)
+	APP_SRCS = Demo.cpp
+	APP_DIR = src/app/examples/example_demo
+else
+	APP_SRCS = Template.cpp
+	APP_DIR = src/app/examples/example_template
+endif
+
+SOURCES += thirdparty/wren/src/vm thirdparty/wrenbind/src
+INCLUDES += thirdparty/wren/src/include
+CFLAGS += -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
+
+LIBS := -lgcm_sys -lrsx -llv2 -lsysutil -lsysmodule -lio -lm -lrt -lnet $(wildcard build/shaders/*.o)
+
+CFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+CFILES := $(filter-out SPUBatchTransformJob.c,$(CFILES))
+CPPFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
+CPPFILES := $(filter-out GLRenderer.cpp GLBatchRenderer.cpp WindowGLFW.cpp imgui.cpp imgui_demo.cpp imgui_draw.cpp imgui_tables.cpp imgui_widgets.cpp imgui_impl_glfw.cpp imgui_impl_opengl2.cpp Main.cpp RSXHeap.cpp offsetAllocator.cpp offsetAllocatorTests.cpp,$(CPPFILES))
+CPPFILES += $(APP_SRCS)
+CPPFILES := $(sort $(CPPFILES))
+
+# OffsetAllocator uses constexpr/member-init/rvalue-refs
+CXX11OFILES := $(OBJDIR)/offsetAllocator.o $(OBJDIR)/RSXHeap.o
+MAIN_OBJ := $(OBJDIR)/Main.$(APP).o
+
+export OUTPUT := $(BUILD)/$(TARGET)
+export VPATH := $(SOURCES) $(APP_DIR)
+export BUILDDIR := $(OBJDIR)
+export LD := $(CXX)
+
+export INCLUDE := $(foreach dir,$(INCLUDES),-I$(dir)) $(LIBPSL1GHT_INC) -I$(OBJDIR)
+export LIBPATHS := $(LIBPSL1GHT_LIB)
+export OFILES := $(addprefix $(OBJDIR)/,$(CPPFILES:.cpp=.o) $(CFILES:.c=.o)) $(MAIN_OBJ) $(CXX11OFILES) $(SPU_BATCH_TRANSFORM_JOB_OBJ)
+
+.PHONY: all clean run pkg
+
+all: $(BUILD)/$(TARGET).self
+
+$(BUILD)/$(TARGET).self: $(BUILD)/$(TARGET).elf
+
+$(BUILD)/$(TARGET).elf: $(OFILES) | $(BUILD)
+	@echo Linking $(notdir $@)
+	$(LD) $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
+
+$(BUILD) $(OBJDIR):
+	@mkdir -p $@
+
+$(BUILDDIR)/%.o: %.cpp | $(OBJDIR)
+	@echo $(notdir $<)
+	@$(CXX) -MD -MP -MF $(BUILDDIR)/$*.d $(CXXFLAGS) -c $< -o $@
+
+# Explicit path: VPATH would otherwise resolve thirdparty/gcmgl/src/Main.cpp first
+$(MAIN_OBJ): src/app/Main.cpp | $(OBJDIR)
+	@echo $(notdir $<)
+	@$(CXX) -MD -MP -MF $(BUILDDIR)/Main.$(APP).d $(CXXFLAGS) -c $< -o $@
+
+$(BUILDDIR)/offsetAllocator.o: offsetAllocator.cpp | $(OBJDIR)
+	@echo $(notdir $<)
+	@$(CXX) -MD -MP -MF $(BUILDDIR)/offsetAllocator.d $(filter-out -std=c++98 -std=gnu++98,$(CXXFLAGS)) -std=c++11 -c $< -o $@
+
+$(BUILDDIR)/RSXHeap.o: RSXHeap.cpp | $(OBJDIR)
+	@echo $(notdir $<)
+	@$(CXX) -MD -MP -MF $(BUILDDIR)/RSXHeap.d $(filter-out -std=c++98 -std=gnu++98,$(CXXFLAGS)) -std=c++11 -c $< -o $@
+
+$(BUILDDIR)/%.o: %.c | $(OBJDIR)
+	@echo $(notdir $<)
+	@$(CC) -MD -MP -MF $(BUILDDIR)/$*.d $(CFLAGS) -c $< -o $@
+
+$(SPU_BATCH_TRANSFORM_JOB_ELF): $(SPU_BATCH_TRANSFORM_JOB_SRC) $(SPU_SRCDIR)/SPUBatchTransformJob.h | $(SPU_BUILD_DIR)
+	@echo Building $(notdir $@)
+	@$(SPU_CC) $(SPU_CFLAGS) -o $@ $(SPU_BATCH_TRANSFORM_JOB_SRC) -L/usr/local/ps3dev/spu/lib -lsputhread
+
+$(SPU_BATCH_TRANSFORM_JOB_OBJ): $(SPU_BATCH_TRANSFORM_JOB_ELF)
+	@echo Embedding $(notdir $<)
+	@cd "$(SPU_BUILD_DIR)" && powerpc64-ps3-elf-ld -r -b binary -o "$(notdir $(SPU_BATCH_TRANSFORM_JOB_OBJ))" $(notdir $(SPU_BATCH_TRANSFORM_JOB_ELF)) && mv "$(notdir $(SPU_BATCH_TRANSFORM_JOB_OBJ))" "$(abspath $(SPU_BATCH_TRANSFORM_JOB_OBJ))"
+
+$(SPU_BUILD_DIR):
+	@mkdir -p $@
+
+-include $(OFILES:.o=.d)
+
+clean:
+	@echo Cleaning...
+	@rm -rf $(BUILD) $(OBJDIR)
+
+run: all
+	ps3load $(BUILD)/$(TARGET).self
+
+pkg: all

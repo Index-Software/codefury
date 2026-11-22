@@ -1,0 +1,27 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+struct FragmentInput_t
+{
+    float3 color : TEXCOORD2;
+    float2 texCoord : TEXCOORD0;
+};
+
+struct FragmentOutput_t
+{
+    float4 color : COLOR;
+};
+
+FragmentOutput_t main(FragmentInput_t input, uniform sampler2D AlbedoMap)
+{
+    FragmentOutput_t output;
+    float2 uv = float2(input.texCoord.x, 1.0 - input.texCoord.y);
+    output.color = float4(input.color, 1.0) * tex2D(AlbedoMap, uv);
+
+    return output;
+}

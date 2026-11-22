@@ -1,0 +1,24 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef CAMERA_SLANGH
+#define CAMERA_SLANGH
+
+#include "Bindings.slangh"
+
+[vk::binding(11, 0)] cbuffer Camera
+{
+    float4 g_CameraPos;
+    float4 g_CameraRight;
+    float4 g_CameraUp;
+    float4 g_CameraForward;
+    float g_TanHalfFOV;
+    float g_AspectRatio;
+};
+
+#endif // CAMERA_SLANGH

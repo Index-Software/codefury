@@ -1,0 +1,39 @@
+#ifndef COMMON_DITHERING_CGINC
+#define COMMON_DITHERING_CGINC
+
+//------------------------------------------------------------------------------
+// Dithering configuration
+//------------------------------------------------------------------------------
+
+// Dithering operators
+#define DITHERING_NONE                 0
+#define DITHERING_INTERLEAVED_NOISE    1
+#define DITHERING_VLACHOS              2
+#define DITHERING_TRIANGLE_NOISE       3
+#define DITHERING_TRIANGLE_NOISE_RGB   4
+
+#define DITHERING_OPERATOR      DITHERING_TRIANGLE_NOISE
+
+//------------------------------------------------------------------------------
+// Noise
+//------------------------------------------------------------------------------
+
+// n must be normalized in [0..1] (e.g. texture coordinates)
+float triangleNoise(float2 n)
+{
+    // triangle noise, in [-1.0..1.0[ range
+    n  = frac(n * float2(5.3987, 5.4421));
+    n += dot(n.yx, n.xy + float2(21.5351, 14.3137));
+
+    float xy = n.x * n.y;
+    // compute in [0..2[ and remap to [-1.0..1.0[
+    return frac(xy * 95.4307) + frac(xy * 75.04961) - 1.0;
+}
+
+// n must not be normalize (e.g. window coordinates)
+float interleavedGradientNoise(float2 n)
+{
+    return frac(52.982919 * frac(dot(float2(0.06711, 0.00584), n)));
+}
+
+#endif // COMMON_DITHERING_CGINC

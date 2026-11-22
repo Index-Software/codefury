@@ -1,0 +1,41 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+#include "../Bindings.cginc"
+
+struct FragmentInput_t
+{
+    float2 ndc : TEXCOORD0;
+};
+
+struct FragmentOutput_t
+{
+    float4 color : COLOR;
+};
+
+uniform float4 g_CameraRight;
+uniform float4 g_CameraUp;
+uniform float4 g_CameraForward;
+uniform float g_TanHalfFOV;
+uniform float g_AspectRatio;
+
+uniform samplerCUBE EnvironmentMap : CF_BINDING_GLOBAL_ENV_MAP;
+
+FragmentOutput_t main(FragmentInput_t input)
+{
+    FragmentOutput_t output;
+
+    float3 rayDir = normalize(
+        g_CameraForward.xyz +
+        g_CameraRight.xyz * input.ndc.x * g_TanHalfFOV * g_AspectRatio +
+        g_CameraUp.xyz * input.ndc.y * g_TanHalfFOV);
+
+    output.color = texCUBE(EnvironmentMap, rayDir);
+
+    return output;
+}

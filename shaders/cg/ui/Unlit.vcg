@@ -1,0 +1,27 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+struct VertexOutput_t
+{
+    float4 position : POSITION;
+    float3 color : TEXCOORD2;
+};
+
+VertexOutput_t main(
+    float3 position : POSITION,
+    float4 color : COLOR0,
+    float2 texCoord : TEXCOORD0,
+
+    uniform float4x4 g_MVP)
+{
+    VertexOutput_t output;
+    output.position = mul(g_MVP, float4(position, 1.0));
+    output.color = color.rgb;
+
+    return output;
+}

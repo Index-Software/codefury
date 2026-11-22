@@ -1,0 +1,89 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef LIT_PASS_ADD
+#define LIT_PASS_BASE
+#endif // !LIT_PASS_ADD
+
+#include "../Lit.cginc"
+#include "../Bindings.cginc"
+#include "../Model.cginc"
+#include "../Camera.cginc"
+#include "../Scene.cginc"
+
+static const float s_GridSpacing = 2.0;
+static const float s_GridFadeStart = 60.0;
+static const float s_GridFadeEnd = 160.0;
+static const float s_GridMinWidth = 0.001;
+static const float s_GridWidthScale = 0.0015;
+static const float s_GridWidthScaleSquared = 0.00002;
+static const float3 s_GridLineColor = float3(0.32, 0.32, 0.32);
+
+struct FragmentInput_t
+{
+    float3 worldPos : TEXCOORD0;
+    float3 normal : TEXCOORD1;
+    float3 color : TEXCOORD2;
+#ifndef LIT_PASS_ADD
+    float4 shadowPos : TEXCOORD3;
+#endif // !LIT_PASS_ADD
+    float4 position : WPOS;
+};
+
+struct FragmentOutput_t
+{
+    float4 color : COLOR;
+};
+
+FragmentOutput_t main(
+    FragmentInput_t input,
+    uniform float Smoothness,
+    uniform float Metallic)
+{
+    FragmentOutput_t output;
+
+    float3 normal = normalize(input.normal);
+#ifdef LIT_PASS_ADD
+    float4 shadowPos = float4(0.0, 0.0, 0.0, 0.0);
+#else // LIT_PASS_ADD
+    float4 shadowPos = input.shadowPos;
+#endif // !LIT_PASS_ADD
+    float3 viewDir = normalize(g_CameraPos.xyz - input.worldPos);
+
+    float smoothness = clamp(Smoothness, 0.0, 1.0);
+    if (Smoothness == 0.0 && Metallic == 0.0)
+    {
+        smoothness = 0.5;
+    }
+
+    float viewDistance = length(input.worldPos.xz - g_CameraPos.xz);
+    float2 cell = abs(frac(input.worldPos.xz / s_GridSpacing - 0.5) - 0.5)
+        * s_GridSpacing;
+    float width = s_GridMinWidth
+        + viewDistance
+            * (s_GridWidthScale + viewDistance * s_GridWidthScaleSquared);
+    float line = 1.0 - smoothstep(width * 0.5, width, min(cell.x, cell.y));
+    line *= 1.0 - smoothstep(s_GridFadeStart, s_GridFadeEnd, viewDistance);
+
+    float3 albedo_srgb = lerp(input.color, s_GridLineColor, line * 0.85);
+    float3 finalColor = GetStandardLighting(
+        input.worldPos,
+        shadowPos,
+        normal,
+        viewDir,
+        smoothness,
+        Metallic,
+        albedo_srgb,
+        input.position.xy);
+
+    finalColor = LinearToSRGB(finalColor);
+
+    output.color = float4(finalColor, 1.0);
+
+    return output;
+}

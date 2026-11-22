@@ -1,0 +1,20 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+struct FragmentOutput_t
+{
+    float4 color : COLOR;
+};
+
+FragmentOutput_t main()
+{
+    FragmentOutput_t output;
+    output.color = float4(1.0, 1.0, 1.0, 1.0);
+
+    return output;
+}

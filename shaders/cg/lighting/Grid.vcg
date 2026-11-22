@@ -1,0 +1,52 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+#include "../Bindings.cginc"
+#include "../Scene.cginc"
+#include "../Shadow.cginc"
+
+struct VertexInput_t
+{
+    float3 position : POSITION;
+    float2 texCoord : TEXCOORD0;
+    float3 normal : NORMAL;
+    float4 color : COLOR0;
+};
+
+struct VertexOutput_t
+{
+    float4 position : POSITION;
+    float3 worldPos : TEXCOORD0;
+    float3 normal : TEXCOORD1;
+    float3 color : TEXCOORD2;
+#ifndef LIT_PASS_ADD
+    float4 shadowPos : TEXCOORD3;
+#endif // !LIT_PASS_ADD
+};
+
+VertexOutput_t main(
+    float3 position : POSITION,
+    float2 texCoord : TEXCOORD0,
+    float3 normal : NORMAL,
+    float4 color : COLOR0,
+
+    uniform float4x4 g_MVP,
+    uniform float4x4 g_Model)
+{
+    VertexOutput_t output;
+    float4 worldPos = mul(g_Model, float4(position, 1.0));
+    output.worldPos = worldPos.xyz;
+    output.normal = normalize(mul((float3x3)g_Model, normal));
+    output.color = color.rgb;
+    output.position = mul(g_MVP, float4(position, 1.0));
+#ifndef LIT_PASS_ADD
+    output.shadowPos = GetDirectionalShadowPos(worldPos.xyz, output.normal);
+#endif // !LIT_PASS_ADD
+
+    return output;
+}

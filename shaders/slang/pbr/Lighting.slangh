@@ -1,0 +1,21 @@
+#ifndef PBR_LIGHTING_SLANGH
+#define PBR_LIGHTING_SLANGH
+
+#include "../Constants.slangh"
+#include "../Shadow.slangh"
+#include "../Scene.slangh"
+#include "../Bindings.slangh"
+#include "../Math.slangh"
+#include "../Camera.slangh"
+
+#include "BRDF.slangh"
+#include "MaterialInputs.slangh"
+#include "CommonMaterial.slangh"
+#include "CommonShading.slangh"
+#include "CommonOcclusion.slangh"
+#include "CommonLighting.slangh"
+#include "LightIndirect.slangh"
+#include "ShadingStandard.slangh"
+#include "ShadingLit.slangh"
+
+#endif // PBR_LIGHTING_SLANGH

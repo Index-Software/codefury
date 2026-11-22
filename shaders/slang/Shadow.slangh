@@ -1,0 +1,196 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef SHADOW_SLANGH
+#define SHADOW_SLANGH
+
+#include "Bindings.slangh"
+#include "Constants.slangh"
+#include "Scene.slangh"
+#include "pbr/CommonDithering.slangh"
+
+[vk::binding(14, 0)] uniform Sampler2DShadow g_ShadowMap;
+[vk::binding(15, 0)] uniform SamplerCubeShadow g_PointShadowMap;
+
+float SamplePointShadow(
+    float3 fragToLight,
+    float farPlane,
+    float bias,
+    float2 screenPos)
+{
+    float n = CF_POINT_SHADOW_NEAR_PLANE;
+    float f = farPlane;
+
+    float linearDepth = max(
+        max(abs(fragToLight.x), abs(fragToLight.y)),
+        abs(fragToLight.z));
+    float biasedLinearDepth = max(linearDepth - bias, n + 0.001);
+    float depth = f * (biasedLinearDepth - n) / (biasedLinearDepth * (f - n));
+
+    float3 poissonDisk[16] = {
+        float3(-0.94201624, -0.39906216, 0.1),
+        float3(0.94558609, -0.76890725, -0.2),
+        float3(-0.094184101, -0.92938870, 0.3),
+        float3(0.34495938, 0.29387760, -0.1),
+        float3(-0.91588581, 0.45771432, 0.2),
+        float3(-0.81544232, -0.87912464, -0.3),
+        float3(-0.38277543, 0.27676845, 0.4),
+        float3(0.97484398, 0.75648379, -0.4),
+        float3(0.44323325, -0.97511554, 0.5),
+        float3(0.53742981, -0.47373420, -0.5),
+        float3(-0.26496911, -0.41893023, 0.6),
+        float3(0.79197514, 0.19090188, -0.6),
+        float3(-0.24188840, 0.99706507, 0.7),
+        float3(-0.81409955, 0.91437590, -0.7),
+        float3(0.19984126, 0.78641367, 0.8),
+        float3(0.14383161, -0.14100790, -0.8)
+    };
+
+    float noise = interleavedGradientNoise(screenPos);
+    float angle = noise * CF_TWO_PI;
+    float s = sin(angle);
+    float c = cos(angle);
+
+    float shadow = 0.0;
+    float diskRadius = 0.015;
+
+    for (int i = 0; i < 16; ++i)
+    {
+        float3 off = poissonDisk[i];
+        float3 rotatedOffset;
+        rotatedOffset.x = off.x * c - off.y * s;
+        rotatedOffset.y = off.x * s + off.y * c;
+        rotatedOffset.z = off.z;
+
+        float3 samplePos = fragToLight + rotatedOffset * diskRadius;
+        shadow += g_PointShadowMap.SampleCmp(samplePos, depth);
+    }
+
+    return shadow / 16.0;
+}
+
+float EdgeFade(float2 c)
+{
+    float2 edge = saturate(min(c, 1.0 - c) * 20.0);
+
+    return edge.x * edge.y;
+}
+
+float SampleShadowmap(float4 fragPosLightSpace, float bias)
+{
+    float3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    bool outside =
+        projCoords.z > 1.0 ||
+        projCoords.z < 0.0 ||
+        projCoords.x < 0.0 ||
+        projCoords.x > 1.0 ||
+        projCoords.y < 0.0 ||
+        projCoords.y > 1.0;
+
+    if (outside)
+    {
+        return 1.0;
+    }
+
+    float currentDepth = projCoords.z;
+    float shadow = 0.0;
+
+    float2 texelSize = g_ShadowMapParams.xy;
+    float2 offset = float2(0.5, 0.5) * texelSize;
+
+    float2 uv00 = projCoords.xy + float2(-offset.x, -offset.y);
+    float2 uv10 = projCoords.xy + float2(offset.x, -offset.y);
+    float2 uv01 = projCoords.xy + float2(-offset.x, offset.y);
+    float2 uv11 = projCoords.xy + float2(offset.x, offset.y);
+    shadow += g_ShadowMap.SampleCmp(uv00, currentDepth - bias);
+    shadow += g_ShadowMap.SampleCmp(uv10, currentDepth - bias);
+    shadow += g_ShadowMap.SampleCmp(uv01, currentDepth - bias);
+    shadow += g_ShadowMap.SampleCmp(uv11, currentDepth - bias);
+    shadow *= 0.25;
+
+    float edgeFade = EdgeFade(projCoords.xy);
+
+    return lerp(1.0, shadow, edgeFade);
+}
+
+float GetShadowFade(float shadow, float dotNL, float threshold)
+{
+    float terminatorFade = smoothstep(0.0, threshold, dotNL);
+
+    return lerp(1.0, shadow, terminatorFade);
+}
+
+float GetDirectionalShadow(
+    float3 worldPos,
+    float4 lightSpacePos,
+    float3 norm,
+    float3 lightDir)
+{
+    float3 dpdx = ddx(worldPos);
+    float3 dpdy = ddy(worldPos);
+    float3 rawGeo = normalize(cross(dpdx, dpdy));
+    float3 geoNormal = (dot(rawGeo, norm) < 0.0) ? -rawGeo : rawGeo;
+
+    float geoDotNL = max(dot(geoNormal, lightDir), 0.0);
+    float slope = sqrt(1.0 - geoDotNL * geoDotNL) / max(geoDotNL, 0.001);
+
+    float bias = clamp(
+        slope * g_ShadowBiasParams.x * 2.0 + g_ShadowBiasParams.x,
+        g_ShadowBiasParams.x,
+        g_ShadowBiasParams.x * 10.0);
+
+    float normalBias = clamp(
+        slope * g_ShadowBiasParams.y,
+        g_ShadowBiasParams.y * 0.4,
+        g_ShadowBiasParams.y * 4.0);
+
+    float3 normalOffset =
+        mul(geoNormal * normalBias, (float3x3)g_LightSpaceMatrix);
+    float4 offsetLightSpace = float4(
+        lightSpacePos.xyz + normalOffset,
+        lightSpacePos.w);
+
+    float shadow = SampleShadowmap(offsetLightSpace, bias);
+    shadow = GetShadowFade(shadow, dot(norm, lightDir), 0.35);
+
+    return shadow;
+}
+
+float GetPointShadow(
+    float3 worldPos,
+    float3 norm,
+    float3 lightPos,
+    float2 screenPos)
+{
+    float3 dpdx = ddx(worldPos);
+    float3 dpdy = ddy(worldPos);
+    float3 rawGeo = normalize(cross(dpdx, dpdy));
+    float3 geoNormal = (dot(rawGeo, norm) < 0.0) ? -rawGeo : rawGeo;
+
+    float geoDotNL = max(dot(geoNormal, normalize(lightPos - worldPos)), 0.0);
+    float slope = sqrt(1.0 - geoDotNL * geoDotNL) / max(geoDotNL, 0.001);
+
+    float baseBias = 0.005;
+    float bias = clamp(
+        slope * baseBias * 2.0 + baseBias,
+        baseBias,
+        baseBias * 10.0);
+    float normalBias = clamp(slope * baseBias, baseBias * 0.4, baseBias * 4.0);
+
+    float3 offsetWorldPos = worldPos + geoNormal * normalBias;
+
+    return SamplePointShadow(
+        offsetWorldPos - lightPos,
+        CF_POINT_SHADOW_FAR_PLANE,
+        bias,
+        screenPos);
+}
+
+#endif // SHADOW_SLANGH

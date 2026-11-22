@@ -1,0 +1,51 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+#include "../Constants.cginc"
+#include "../Math.cginc"
+
+struct FragmentInput_t
+{
+    float3 color : TEXCOORD2;
+    float2 texCoord : TEXCOORD0;
+    float4 outlineColor : TEXCOORD1;
+    float edgeSharpness : TEXCOORD3;
+};
+
+struct FragmentOutput_t
+{
+    float4 color : COLOR;
+};
+
+uniform sampler2D AlbedoMap : TEXUNIT0;
+
+FragmentOutput_t main(FragmentInput_t input)
+{
+    FragmentOutput_t output;
+    float4 sample = tex2D(AlbedoMap, input.texCoord);
+
+    float edgeSharpness = input.edgeSharpness;
+    float outlineWidth = input.outlineColor.a * CF_TEXT_OUTLINE_WIDTH_RANGE;
+
+    float value = Median3(sample.r, sample.g, sample.b);
+    float alpha = saturate(edgeSharpness * (value - 0.5) + 0.5);
+    float outlineMask = max(0.0, sign(outlineWidth));
+
+    float outlineAlpha = saturate(
+        edgeSharpness * (sample.a - 0.5) + outlineWidth + 0.5) *
+        (1.0 - alpha) * outlineMask;
+    float finalAlpha = saturate(alpha + outlineAlpha);
+    clip(finalAlpha - 0.01);
+    float3 finalColor = lerp(
+        input.color,
+        lerp(input.outlineColor.rgb, input.color, alpha),
+        outlineMask);
+    output.color = float4(finalColor, finalAlpha);
+
+    return output;
+}

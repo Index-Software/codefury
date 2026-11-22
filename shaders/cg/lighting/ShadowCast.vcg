@@ -1,0 +1,38 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+struct VertexInput_t
+{
+    float3 position : POSITION;
+    float2 texCoord : TEXCOORD0;
+    float3 normal : NORMAL;
+    float3 color : COLOR;
+};
+
+struct VertexOutput_t
+{
+    float4 position : POSITION;
+};
+
+VertexOutput_t main(
+    float3 position : POSITION,
+    float2 texCoord : TEXCOORD0,
+    float3 normal : NORMAL,
+    float4 color : COLOR0,
+
+    uniform float4x4 g_Model,
+
+    uniform float4x4 g_LightSpaceMatrix)
+{
+    VertexOutput_t output;
+
+    float3 worldPos = mul(g_Model, float4(position, 1.0)).xyz;
+    output.position = mul(g_LightSpaceMatrix, float4(worldPos, 1.0));
+
+    return output;
+}

@@ -1,0 +1,26 @@
+//===----------------------------------------------------------------------===//
+//
+// Part of the codefury, under the MIT License.
+// See LICENSE for license information.
+// SPDX-License-Identifier: MIT
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef SCENE_SLANGH
+#define SCENE_SLANGH
+
+#include "Bindings.slangh"
+
+[vk::binding(9, 0)] cbuffer Scene
+{
+    float4x4 g_LightSpaceMatrix;
+    float4 g_ShadowMapParams;
+    float4 g_ShadowBiasParams;
+    float4 g_Time;
+    float4 g_ShadowLightDir;
+    float4 g_ShadowProjX;
+    float4 g_ShadowProjY;
+    float4 g_ShadowProjZ;
+};
+
+#endif // SCENE_SLANGH

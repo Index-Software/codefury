@@ -1,0 +1,264 @@
+#ifndef FILAMENT_IBL_INCLUDED
+#define FILAMENT_IBL_INCLUDED
+
+#include "CommonOcclusion.cginc"
+#include "BRDF.cginc"
+#include "MaterialInputs.cginc"
+#include "SharedSHLib.cginc"
+
+#ifndef SAMPLER0_IBLDFG
+#define SAMPLER0_IBLDFG
+uniform sampler2D sampler0_iblDFG : CF_BINDING_IBL_DFG;
+#endif
+
+#ifndef SAMPLER0_IBLSPECULAR
+#define SAMPLER0_IBLSPECULAR
+uniform samplerCUBE sampler0_iblSpecular : CF_BINDING_IBL_SPECULAR;
+#endif
+
+//------------------------------------------------------------------------------
+// Image based lighting configuration
+//------------------------------------------------------------------------------
+
+// Spherical harmonics sampling algorithm
+// Basic SH sampling, with L2 SH enabled
+#define SPHERICAL_HARMONICS_DEFAULT         0
+// Geometrics' deringing lightprobe sampling, using L1 SH
+#define SPHERICAL_HARMONICS_GEOMETRICS      1
+// Activision's Quadratic Zonal Harmonics, using L1 SH
+#define SPHERICAL_HARMONICS_ZH3             2
+
+#define SPHERICAL_HARMONICS SPHERICAL_HARMONICS_DEFAULT
+
+// IBL integration algorithm
+#define IBL_INTEGRATION_PREFILTERED_CUBEMAP         0
+#define IBL_INTEGRATION_IMPORTANCE_SAMPLING         1 // Not supported!
+
+#define IBL_INTEGRATION                             IBL_INTEGRATION_PREFILTERED_CUBEMAP
+
+#define IBL_INTEGRATION_IMPORTANCE_SAMPLING_COUNT   64
+
+//------------------------------------------------------------------------------
+// IBL prefiltered DFG term implementations
+//------------------------------------------------------------------------------
+
+float3 PrefilteredDFG_LUT(float lod, float NoV)
+{
+    #if defined(USE_DFG_LUT)
+    // coord = sqrt(linear_roughness), which is the mapping used by cmgen.
+    return tex2D(sampler0_iblDFG, float2(NoV, lod)).rgb;
+    #else
+    // Texture not available
+    return float3(1.0, 0.0, 0.0);
+    #endif
+}
+
+//------------------------------------------------------------------------------
+// IBL environment BRDF dispatch
+//------------------------------------------------------------------------------
+
+float3 prefilteredDFG(float perceptualRoughness, float NoV)
+{
+    #if defined(USE_DFG_LUT)
+        // PrefilteredDFG_LUT() takes a LOD, which is sqrt(roughness) = perceptualRoughness
+        return PrefilteredDFG_LUT(perceptualRoughness, NoV);
+    #else
+        #if 0
+        // Karis' approximation based on Lazarov's
+        const float4 c0 = float4(-1.0, -0.0275, -0.572,  0.022);
+        const float4 c1 = float4( 1.0,  0.0425,  1.040, -0.040);
+        float4 r = perceptualRoughness * c0 + c1;
+        float a004 = min(r.x * r.x, exp2(-9.28 * NoV)) * r.x + r.y;
+        return (float3(float2(-1.04, 1.04) * a004 + r.zw, 0.0));
+        #endif
+        #if 0
+        // Zioma's approximation based on Karis
+        return float3(
+            float2(1.0, pow(1.0 - max(perceptualRoughness, NoV), 3.0)),
+            0.0);
+        #endif
+        return float3(0, 1, 1);
+    #endif
+}
+
+//------------------------------------------------------------------------------
+// IBL irradiance implementations
+//------------------------------------------------------------------------------
+
+float3 Irradiance_SphericalHarmonics(const float3 n, const bool useL2)
+{
+    float3 finalSH = float3(0,0,0);
+
+    #if (SPHERICAL_HARMONICS == SPHERICAL_HARMONICS_DEFAULT)
+        finalSH = SHEvalLinearL0L1(float4(n, 1.0));
+    #endif
+
+    #if (SPHERICAL_HARMONICS == SPHERICAL_HARMONICS_GEOMETRICS)
+        float3 L0 = float3(g_SHAr.w, g_SHAg.w, g_SHAb.w);
+        float3 L0L2 = float3(g_SHBr.z, g_SHBg.z, g_SHBb.z) / 3.0;
+        L0 = (useL2) ? L0+L0L2 : L0-L0L2;
+        finalSH.r = shEvaluateDiffuseL1Geomerics_local(L0.r, g_SHAr.xyz, n);
+        finalSH.g = shEvaluateDiffuseL1Geomerics_local(L0.g, g_SHAg.xyz, n);
+        finalSH.b = shEvaluateDiffuseL1Geomerics_local(L0.b, g_SHAb.xyz, n);
+        // Quadratic polynomials
+    #endif
+
+    #if (SPHERICAL_HARMONICS == SPHERICAL_HARMONICS_ZH3)
+        finalSH = SHEvalLinearL0L1_ZH3Hallucinate(float4(n, 1.0));
+    #endif
+
+    // L2 contribution.
+    #if (SPHERICAL_HARMONICS == SPHERICAL_HARMONICS_DEFAULT)
+        if (useL2) finalSH += SHEvalLinearL2(float4(n, 1.0));
+    #endif
+
+    return finalSH;
+}
+
+float3 Irradiance_SphericalHarmonics(const float3 n)
+{
+    // Assume L2 is wanted
+    return Irradiance_SphericalHarmonics(n, true);
+}
+
+//------------------------------------------------------------------------------
+// IBL irradiance dispatch
+//------------------------------------------------------------------------------
+
+float3 get_diffuseIrradiance(const float3 n)
+{
+        return max(float3(0, 0, 0), Irradiance_SphericalHarmonics(n));
+}
+
+//------------------------------------------------------------------------------
+// IBL specular
+//------------------------------------------------------------------------------
+
+float perceptualRoughnessToLod(float perceptualRoughness)
+{
+    const float iblRoughnessOneLevel = CF_IBL_SPECULAR_LOD_STEPS;
+    // The mapping below is a quadratic fit for log2(perceptualRoughness)+iblRoughnessOneLevel when
+    // iblRoughnessOneLevel is 4. We found empirically that this mapping works very well for
+    // a 256 cubemap with 5 levels used. But also scales well for other iblRoughnessOneLevel values.
+    //return iblRoughnessOneLevel * perceptualRoughness * (2.0 - perceptualRoughness);
+
+    return iblRoughnessOneLevel * perceptualRoughness *
+        (1.7 - 0.7 * perceptualRoughness);
+}
+
+float3 prefilteredRadiance(const float3 r, float perceptualRoughness)
+{
+    float lod = perceptualRoughnessToLod(perceptualRoughness);
+    return texCUBElod(sampler0_iblSpecular, float4(r, lod)).rgb;
+}
+
+float3 prefilteredRadiance(const float3 r, float roughness, float offset)
+{
+    const float iblRoughnessOneLevel = CF_IBL_SPECULAR_LOD_STEPS;
+    float lod = iblRoughnessOneLevel * roughness;
+    return texCUBElod(sampler0_iblSpecular, float4(r, lod + offset)).rgb;
+}
+
+float3 getSpecularDominantDirection(
+    const float3 n,
+    const float3 r,
+    float roughness)
+{
+    return lerp(r, n, roughness * roughness);
+}
+
+float3 specularDFG(const PixelParams pixel)
+{
+    return lerp(pixel.dfg.xxx, pixel.dfg.yyy, pixel.f0);
+}
+
+/**
+ * Returns the reflected vector at the current shading point. The reflected vector
+ * return by this function might be different from shading.reflected:
+ * - For anisotropic material, we bend the reflection vector to simulate
+ *   anisotropic indirect lighting
+ * - The reflected vector may be modified to point towards the dominant specular
+ *   direction to match reference renderings when the roughness increases
+ */
+
+float3 getReflectedVector(
+    const PixelParams pixel,
+    const float3 v,
+    const float3 n)
+{
+    float3 r = reflect(-v, n);
+
+    return r;
+}
+
+float3 getReflectedVector(
+    const ShadingParams shading,
+    const PixelParams pixel,
+    const float3 n)
+{
+    float3 r = shading.reflected;
+
+    return getSpecularDominantDirection(n, r, pixel.roughness);
+}
+
+void combineDiffuseAndSpecular(
+    const ShadingParams shading,
+    const PixelParams pixel,
+    const float3 E,
+    const float3 Fd,
+    const float3 Fr,
+    inout float3 color)
+{
+    const float iblLuminance = g_IBLLuminance;
+    color.rgb += (Fd + Fr) * iblLuminance;
+}
+
+void evaluateIBL(
+    const ShadingParams shading,
+    const MaterialInputs material,
+    const PixelParams pixel,
+    inout float3 color)
+{
+    float ssao = 1.0; // Not implemented
+
+    // specular layer
+    float3 Fr;
+#if IBL_INTEGRATION == IBL_INTEGRATION_PREFILTERED_CUBEMAP
+    float3 E = specularDFG(pixel);
+    float3 r = getReflectedVector(shading, pixel, shading.normal);
+    Fr = E * prefilteredRadiance(r, pixel.perceptualRoughness);
+#endif
+
+    // Ambient occlusion
+    float diffuseAO = min(material.ambientOcclusion, ssao);
+    float specularAO =
+        computeSpecularAO(shading.NoV, diffuseAO, pixel.roughness);
+
+    float3 specularSingleBounceAO =
+        singleBounceAO(specularAO) * pixel.energyCompensation;
+    Fr *= specularSingleBounceAO;
+
+    // diffuse layer
+    float diffuseBRDF = singleBounceAO(diffuseAO); // Fd_Lambert() is baked in the SH below
+
+#if defined(MATERIAL_HAS_BENT_NORMAL)
+    float3 diffuseNormal = shading.bentNormal;
+#else
+    float3 diffuseNormal = shading.normal;
+#endif
+
+#if IBL_INTEGRATION == IBL_INTEGRATION_PREFILTERED_CUBEMAP
+    float3 diffuseIrradiance = get_diffuseIrradiance(diffuseNormal);
+#endif
+
+    float3 Fd = pixel.diffuseColor * diffuseIrradiance * (1.0 - E) * diffuseBRDF;
+
+    // extra ambient occlusion term for the base and subsurface layers
+    multiBounceAO(diffuseAO, pixel.diffuseColor, Fd);
+    multiBounceSpecularAO(specularAO, pixel.f0, Fr);
+
+    // Note: iblLuminance is already premultiplied by the exposure
+    combineDiffuseAndSpecular(shading, pixel, E, Fd, Fr, color);
+}
+
+#endif // FILAMENT_IBL_INCLUDED

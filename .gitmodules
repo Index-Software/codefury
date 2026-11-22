@@ -1,0 +1,18 @@
+[submodule "thirdparty/mathsfury"]
+	path = thirdparty/mathsfury
+	url = https://github.com/Index-Software/mathsfury
+[submodule "thirdparty/gcmgl"]
+	path = thirdparty/gcmgl
+	url = https://github.com/Index-Software/gcmgl
+[submodule "thirdparty/wren"]
+	path = thirdparty/wren
+	url = https://github.com/wren-lang/wren
+[submodule "thirdparty/wrenbind"]
+	path = thirdparty/wrenbind
+	url = https://github.com/Index-Software/wrenbind
+[submodule "thirdparty/glad"]
+	path = thirdparty/glad
+	url = https://github.com/Dav1dde/glad.git
+[submodule "thirdparty/simde"]
+	path = thirdparty/simde
+	url = https://github.com/simd-everywhere/simde.git
