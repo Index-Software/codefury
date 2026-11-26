@@ -40,59 +40,23 @@ void GetLight(
     float3 lightPos = g_LightData[i * 2].xyz;
     float lightIntensity = g_LightData[i * 2].w;
     float3 lightColor = g_LightData[i * 2 + 1].xyz;
-    float lightRadius = g_LightData[i * 2 + 1].w;
 
     light.colorIntensity = float4(lightColor * lightIntensity, 1.0);
-    if (lightRadius < 0.0)
-    {
-        light.l = normalize(lightPos);
-        light.attenuation = 1.0;
-    }
-    else
-    {
-        float3 toLight = lightPos - worldPos;
-        float dist = length(toLight);
-        light.l = toLight / max(dist, 0.0001);
-        float distSq = dist * dist;
-        float radiusSq = max(lightRadius * lightRadius, 0.0001);
-        float falloff = saturate(1.0 - (distSq / radiusSq));
-        light.attenuation = (falloff * falloff) / (1.0 + 0.1 * distSq);
-    }
+#ifdef LIT_PASS_BASE
+    light.l = normalize(lightPos);
+    light.attenuation = 1.0;
+#else // LIT_PASS_BASE
+    float lightRadius = g_LightData[i * 2 + 1].w;
+    float3 toLight = lightPos - worldPos;
+    float dist = length(toLight);
+    light.l = toLight / max(dist, 0.0001);
+    float distSq = dist * dist;
+    float radiusSq = max(lightRadius * lightRadius, 0.0001);
+    float falloff = saturate(1.0 - (distSq / radiusSq));
+    light.attenuation = (falloff * falloff) / (1.0 + 0.1 * distSq);
+#endif // !LIT_PASS_BASE
     light.NoL = saturate(dot(norm, light.l));
     light.worldPosition = lightPos;
-}
-
-float3 GetLightContribution(
-    Light light,
-    ShadingParams shading,
-    PixelParams pixel,
-    float3 worldPos,
-    float4 lightSpacePos,
-    float3 norm,
-    float2 screenPos)
-{
-    if (light.NoL <= 0.0)
-        return float3(0.0, 0.0, 0.0);
-
-    float shadow = 1.0;
-    if (light.attenuation == 1.0)
-    {
-        shadow = GetDirectionalShadow(
-            worldPos,
-            lightSpacePos,
-            norm,
-            light.l);
-    }
-    else
-    {
-        shadow = GetPointShadow(
-            worldPos,
-            norm,
-            light.worldPosition,
-            screenPos);
-    }
-
-    return surfaceShading(shading, pixel, light, shadow);
 }
 
 float3 GetStandardLighting(
@@ -129,113 +93,37 @@ float3 GetStandardLighting(
     getPixelParams(shading, material, pixel);
 
     float3 color = float3(0.0, 0.0, 0.0);
+
+#ifdef LIT_PASS_ADD
+    Light light0;
+    GetLight(light0, g_LightData, 0, worldPos, norm);
+    if (light0.NoL > 0.0)
+    {
+        float shadow = GetPointShadow(
+            worldPos,
+            norm,
+            light0.worldPosition,
+            screenPos);
+        color += surfaceShading(shading, pixel, light0, shadow);
+    }
+#else // LIT_PASS_ADD
     evaluateIBL(shading, material, pixel, color);
-    color *= 1.0 - g_IsAddPass;
 
     if (g_NumLights > 0.0)
     {
         Light light0;
         GetLight(light0, g_LightData, 0, worldPos, norm);
-        color += GetLightContribution(
-            light0,
-            shading,
-            pixel,
-            worldPos,
-            lightSpacePos,
-            norm,
-            screenPos);
+        if (light0.NoL > 0.0)
+        {
+            float shadow = GetDirectionalShadow(
+                worldPos,
+                lightSpacePos,
+                norm,
+                light0.l);
+            color += surfaceShading(shading, pixel, light0, shadow);
+        }
     }
-    if (g_NumLights > 1.0)
-    {
-        Light light1;
-        GetLight(light1, g_LightData, 1, worldPos, norm);
-        color += GetLightContribution(
-            light1,
-            shading,
-            pixel,
-            worldPos,
-            lightSpacePos,
-            norm,
-            screenPos);
-    }
-    if (g_NumLights > 2.0)
-    {
-        Light light2;
-        GetLight(light2, g_LightData, 2, worldPos, norm);
-        color += GetLightContribution(
-            light2,
-            shading,
-            pixel,
-            worldPos,
-            lightSpacePos,
-            norm,
-            screenPos);
-    }
-    if (g_NumLights > 3.0)
-    {
-        Light light3;
-        GetLight(light3, g_LightData, 3, worldPos, norm);
-        color += GetLightContribution(
-            light3,
-            shading,
-            pixel,
-            worldPos,
-            lightSpacePos,
-            norm,
-            screenPos);
-    }
-    if (g_NumLights > 4.0)
-    {
-        Light light4;
-        GetLight(light4, g_LightData, 4, worldPos, norm);
-        color += GetLightContribution(
-            light4,
-            shading,
-            pixel,
-            worldPos,
-            lightSpacePos,
-            norm,
-            screenPos);
-    }
-    if (g_NumLights > 5.0)
-    {
-        Light light5;
-        GetLight(light5, g_LightData, 5, worldPos, norm);
-        color += GetLightContribution(
-            light5,
-            shading,
-            pixel,
-            worldPos,
-            lightSpacePos,
-            norm,
-            screenPos);
-    }
-    if (g_NumLights > 6.0)
-    {
-        Light light6;
-        GetLight(light6, g_LightData, 6, worldPos, norm);
-        color += GetLightContribution(
-            light6,
-            shading,
-            pixel,
-            worldPos,
-            lightSpacePos,
-            norm,
-            screenPos);
-    }
-    if (g_NumLights > 7.0)
-    {
-        Light light7;
-        GetLight(light7, g_LightData, 7, worldPos, norm);
-        color += GetLightContribution(
-            light7,
-            shading,
-            pixel,
-            worldPos,
-            lightSpacePos,
-            norm,
-            screenPos);
-    }
+#endif // !LIT_PASS_ADD
 
     return color;
 }

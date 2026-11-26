@@ -6,6 +6,10 @@
 //
 //===----------------------------------------------------------------------===//
 
+#ifndef LIT_PASS_ADD
+#define LIT_PASS_BASE
+#endif // !LIT_PASS_ADD
+
 #include "../Lit.slangh"
 #include "../Bindings.slangh"
 #include "../Model.slangh"
