@@ -10,11 +10,11 @@
 #define LIT_PASS_BASE
 #endif // !LIT_PASS_ADD
 
-#include "../Lit.slangh"
-#include "../Bindings.slangh"
-#include "../Model.slangh"
-#include "../Camera.slangh"
-#include "../Scene.slangh"
+#include "Lit.slangh"
+#include "Bindings.slangh"
+#include "Model.slangh"
+#include "Camera.slangh"
+#include "Scene.slangh"
 
 static const float s_GridSpacing = 2.0;
 static const float s_GridFadeStart = 60.0;

@@ -6,9 +6,9 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "../Bindings.cginc"
-#include "../Scene.cginc"
-#include "../Shadow.cginc"
+#include "Bindings.cginc"
+#include "Scene.cginc"
+#include "Shadow.cginc"
 
 struct VertexInput_t
 {

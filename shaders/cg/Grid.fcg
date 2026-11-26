@@ -10,11 +10,11 @@
 #define LIT_PASS_BASE
 #endif // !LIT_PASS_ADD
 
-#include "../Lit.cginc"
-#include "../Bindings.cginc"
-#include "../Model.cginc"
-#include "../Camera.cginc"
-#include "../Scene.cginc"
+#include "Lit.cginc"
+#include "Bindings.cginc"
+#include "Model.cginc"
+#include "Camera.cginc"
+#include "Scene.cginc"
 
 static const float s_GridSpacing = 2.0;
 static const float s_GridFadeStart = 60.0;

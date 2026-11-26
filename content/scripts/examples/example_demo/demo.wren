@@ -26,7 +26,7 @@ class App {
     litShader.createFromSource("lighting/Lit")
 
     var gridShader = CShader.new()
-    gridShader.createFromSource("lighting/Grid")
+    gridShader.createFromSource("Grid")
 
     var skyboxShader = CShader.new()
     skyboxShader.createFromSource("skybox/SkyboxCubemap")
