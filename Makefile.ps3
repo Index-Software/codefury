@@ -13,6 +13,7 @@ OBJDIR := build/obj/ps3
 SOURCES := src/app src/engine src/engine/config src/engine/ecs src/engine/ecs/components \
             src/engine/scene \
             src/engine/input src/engine/input/ps3 src/engine/input/controllers \
+            src/engine/audio src/engine/audio/ps3 \
             src/engine/renderer src/engine/renderer/shader src/engine/renderer/material \
             src/engine/renderer/texture src/engine/renderer/text \
             src/engine/renderer/ibl \
@@ -68,7 +69,7 @@ SOURCES += thirdparty/wren/src/vm thirdparty/wrenbind/src
 INCLUDES += thirdparty/wren/src/include
 CFLAGS += -DWREN_OPT_META=0 -DWREN_OPT_RANDOM=0
 
-LIBS := -lgcm_sys -lrsx -llv2 -lsysutil -lsysmodule -lio -lm -lrt -lnet $(wildcard build/shaders/*.o)
+LIBS := -lgcm_sys -lrsx -llv2 -lsysutil -lsysmodule -lio -laudio -lm -lrt -lnet $(wildcard build/shaders/*.o)
 
 CFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CFILES := $(filter-out SPUBatchTransformJob.c,$(CFILES))

@@ -8,6 +8,8 @@
 
 #include "app/Engine.h"
 #include "app/App.h"
+#include "audio/Audio.h"
+#include "audio/AudioManager.h"
 #include "config/ConfigVar.h"
 #include "debug/Debug.h"
 #include "ecs/EntityRegistry.h"
@@ -55,6 +57,7 @@ CEngine::~CEngine()
 	ReleaseDefaultMaterial();
 	m_pDebug.Destroy();
 	m_pGUI.Destroy();
+	m_pAudioManager.Destroy();
 	m_pInputManager.Destroy();
 
 	CConfigVarManager::Save(g_ConfigFilePath);
@@ -151,6 +154,20 @@ bool CEngine::Init()
 	IInput* pInput = m_pInputManager->Get();
 	pInput->SetWindow(pWindow->GetNativeHandle());
 
+	if (!m_pAudioManager.Create())
+	{
+		Error("[CEngine] Failed to create the audio manager\n");
+
+		return false;
+	}
+
+	if (m_pAudioManager->Start() == 0)
+	{
+		Error("[CEngine] Failed to start audio\n");
+
+		return false;
+	}
+
 	if (!m_pGUI.Create())
 	{
 		Error("[CEngine] Failed to create the UI\n");
@@ -232,6 +249,7 @@ bool CEngine::Init()
 		WREN_SET_SINGLETON(CScene, m_pScene);
 		WREN_SET_SINGLETON(CRenderQueueManager, m_pRenderQueue);
 		WREN_SET_SINGLETON(IInput, pInput);
+		WREN_SET_SINGLETON(IAudio, m_pAudioManager->Get());
 
 		if (!m_pWrenManager->Init())
 		{
@@ -269,6 +287,7 @@ int CEngine::Run()
 {
 	IWindow* pWindow = m_pWindowManager->GetWindow();
 	IInput* pInput = m_pInputManager->Get();
+	IAudio* pAudio = m_pAudioManager->Get();
 	const char* pScriptPath = m_pApp->GetScriptPath();
 
 	bool isRunning = true;
@@ -283,6 +302,7 @@ int CEngine::Run()
 		CTime::Update();
 
 		pInput->Update();
+		pAudio->Update();
 
 		m_pRenderer->BeginFrame();
 		m_pRenderer->Clear(ClearAll, CColor(0.1f, 0.1f, 0.1f, 1.0f), 1.0f, 0);

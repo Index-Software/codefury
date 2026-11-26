@@ -31,6 +31,7 @@ class CEntityRegistry;
 class CScene;
 class CRenderQueueManager;
 class IInput;
+class IAudio;
 
 static bool CallMethod(
 	WrenVM* pVM,
@@ -99,6 +100,7 @@ void CWrenManager::Shutdown()
 	CWrenBindSingleton<CScene>::Set(WB_NULL);
 	CWrenBindSingleton<CRenderQueueManager>::Set(WB_NULL);
 	CWrenBindSingleton<IInput>::Set(WB_NULL);
+	CWrenBindSingleton<IAudio>::Set(WB_NULL);
 }
 
 WrenVM* CWrenManager::GetVM() const

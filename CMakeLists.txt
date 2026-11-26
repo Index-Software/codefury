@@ -30,6 +30,10 @@ set(ENGINE_SRCS
 	src/engine/ecs/components/Camera.cpp
 	src/engine/input/InputManager.cpp
 	src/engine/input/controllers/FreeCamera.cpp
+	src/engine/audio/AudioManager.cpp
+	src/engine/audio/AudioMixer.cpp
+	src/engine/audio/Vorbis.cpp
+	src/engine/audio/STBVorbis.c
 	src/engine/renderer/material/Material.cpp
 	src/engine/renderer/texture/ColorSpace.cpp
 	src/engine/renderer/texture/Texture.cpp
@@ -92,6 +96,7 @@ set(WREN_BIND_INPUTS
 	${CMAKE_SOURCE_DIR}/src/engine/scene/Scene.h
 	${CMAKE_SOURCE_DIR}/src/engine/renderer/RenderQueue.h
 	${CMAKE_SOURCE_DIR}/src/engine/input/Input.h
+	${CMAKE_SOURCE_DIR}/src/engine/audio/Audio.h
 	${CMAKE_SOURCE_DIR}/src/engine/input/controllers/FreeCamera.h
 	${CMAKE_SOURCE_DIR}/src/engine/renderer/Skybox.h
 	${CMAKE_SOURCE_DIR}/src/engine/renderer/shader/Shader.h
@@ -213,6 +218,7 @@ if(BUILD_PS3)
 		thirdparty/gcmgl/src/renderer/gcm/spu/SPUBatchTransformManager.cpp
 		thirdparty/gcmgl/src/window/ps3/WindowPS3.cpp
 		src/engine/input/ps3/InputPS3.cpp
+		src/engine/audio/ps3/AudioPS3.cpp
 	)
 
 	add_library(engine STATIC ${ENGINE_SRCS})
@@ -240,6 +246,7 @@ if(BUILD_PS3)
 		m
 		sysutil
 		io
+		audio
 	)
 
 	add_executable(codefury src/app/Main.cpp src/app/Engine.cpp)
@@ -279,6 +286,8 @@ else()
 		thirdparty/gcmgl/src/renderer/gl/GLBatchRenderer.cpp
 		thirdparty/gcmgl/src/window/glfw/WindowGLFW.cpp
 		src/engine/input/glfw/InputGLFW.cpp
+		src/engine/audio/miniaudio/AudioMiniaudio.cpp
+		thirdparty/miniaudio/miniaudio.c
 	)
 
 	add_library(engine STATIC ${ENGINE_SRCS})
@@ -286,6 +295,12 @@ else()
 	target_compile_definitions(engine PRIVATE
 		WREN_OPT_META=0
 		WREN_OPT_RANDOM=0
+		MA_NO_DECODING
+		MA_NO_ENCODING
+		MA_NO_GENERATION
+		MA_NO_RESOURCE_MANAGER
+		MA_NO_NODE_GRAPH
+		MA_NO_ENGINE
 	)
 
 	target_include_directories(engine PUBLIC
@@ -309,6 +324,9 @@ else()
 		OpenGL::GL
 		${GLFW3_LIBRARIES}
 		glad
+		pthread
+		m
+		${CMAKE_DL_LIBS}
 	)
 
 	target_link_directories(engine PUBLIC ${GLFW3_LIBRARY_DIRS})

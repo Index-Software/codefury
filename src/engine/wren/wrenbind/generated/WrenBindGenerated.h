@@ -23,6 +23,7 @@ class CDebug;
 class CScene;
 class CRenderQueueManager;
 class IInput;
+class IAudio;
 class CEntityRegistry;
 class IRenderer;
 

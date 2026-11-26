@@ -14,6 +14,7 @@
 #include "utils/Owned.h"
 
 class CApp;
+class CAudioManager;
 class CDebug;
 class CEntityRegistry;
 class CInputManager;
@@ -38,6 +39,7 @@ private:
 
 	COwned<CWindowManager> m_pWindowManager;
 	COwned<CInputManager> m_pInputManager;
+	COwned<CAudioManager> m_pAudioManager;
 	COwned<CUI> m_pGUI;
 	COwned<CDebug> m_pDebug;
 	COwned<CEntityRegistry> m_pRegistry;
