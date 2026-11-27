@@ -91,6 +91,9 @@ set(ENGINE_SRCS
 set(WREN_BIND_GEN ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/wren/wrenbind/generated/WrenBindGenerated.cpp)
 set(WREN_BIND_GEN_H ${CMAKE_CURRENT_SOURCE_DIR}/src/engine/wren/wrenbind/generated/WrenBindGenerated.h)
 
+file(GLOB_RECURSE WREN_SCRIPT_INPUTS
+	${CMAKE_SOURCE_DIR}/content/*.wren)
+
 set(WREN_BIND_INPUTS
 	${CMAKE_SOURCE_DIR}/src/engine/renderer/ui/UI.h
 	${CMAKE_SOURCE_DIR}/src/engine/debug/Debug.h
@@ -164,6 +167,7 @@ add_custom_command(
 	DEPENDS
 		${WREN_CODEGEN_DEPS}
 		${WREN_BIND_INPUTS}
+		${WREN_SCRIPT_INPUTS}
 	COMMENT "Generating Wren bindings..."
 )
 

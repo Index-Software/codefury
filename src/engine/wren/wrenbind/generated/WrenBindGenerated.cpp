@@ -2460,7 +2460,7 @@ static void s_Fini_TextureWrapMode_t(void* pData)
 
 static CWrenBindClass s_Class_CCamera("engine/ecs/components/camera", "CCamera");
 static CWrenBindClass s_Class_CColor("engine/color", "CColor");
-static CWrenBindClass s_Class_CFreeCamera("engine/input/free_camera", "CFreeCamera");
+static CWrenBindClass s_Class_CFreeCamera("engine/input/controllers/free_camera", "CFreeCamera");
 static CWrenBindClass s_Class_CLight("engine/ecs/components/light", "CLight");
 static CWrenBindClass s_Class_CMaterial("engine/renderer/material", "CMaterial");
 static CWrenBindClass s_Class_CMatrix4("engine/maths/matrix4", "CMatrix4");
