@@ -116,6 +116,7 @@ set(WREN_BIND_INPUTS
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/CMaths.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/IRenderer.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/CTime.h
+	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/CFile.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/Anchor.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/ShaderType.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/LightType.h

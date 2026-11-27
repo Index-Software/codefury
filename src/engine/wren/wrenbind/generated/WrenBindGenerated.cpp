@@ -39,6 +39,7 @@
 #include "wren/bindings/CMatrix4.h"
 #include "wren/bindings/CMaths.h"
 #include "wren/bindings/CTime.h"
+#include "wren/bindings/CFile.h"
 #include "wren/bindings/Anchor.h"
 #include "wren/bindings/ShaderType.h"
 #include "wren/bindings/LightType.h"
@@ -1564,6 +1565,16 @@ static void WrenBindForward_CTime_getTimeSinceStartup_0param(WrenVM* pVM)
 	wrenSetSlotDouble(pVM, 0, CTime::GetTimeSinceStartup());
 }
 
+static void WrenBindForward_CFile_read_1param(WrenVM* pVM)
+{
+	wrenSetSlotString(pVM, 0, CFile::Read(wrenGetSlotString(pVM, 1)));
+}
+
+static void WrenBindForward_CFile_write_2param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CFile::Write(wrenGetSlotString(pVM, 1), wrenGetSlotString(pVM, 2)));
+}
+
 static void WrenBindForward_Anchor_t_TopLeft_0param(WrenVM* pVM)
 {
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(Anchor_t::TopLeft));
@@ -1942,6 +1953,8 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("CTime", "getDeltaTime()", WrenBindForward_CTime_getDeltaTime_0param, true),
 	BIND("CTime", "getFrameCount()", WrenBindForward_CTime_getFrameCount_0param, true),
 	BIND("CTime", "getTimeSinceStartup()", WrenBindForward_CTime_getTimeSinceStartup_0param, true),
+	BIND("CFile", "read(_)", WrenBindForward_CFile_read_1param, true),
+	BIND("CFile", "write(_,_)", WrenBindForward_CFile_write_2param, true),
 	BIND("Anchor_t", "TopLeft", WrenBindForward_Anchor_t_TopLeft_0param, true),
 	BIND("Anchor_t", "Top", WrenBindForward_Anchor_t_Top_0param, true),
 	BIND("Anchor_t", "TopRight", WrenBindForward_Anchor_t_TopRight_0param, true),
@@ -2033,6 +2046,17 @@ static void s_Alloc_CEntityRegistry(WrenVM* pVM)
 }
 
 static void s_Fini_CEntityRegistry(void* pData)
+{
+	Handle_t* pHandle = static_cast<Handle_t*>(pData);
+	(void)pHandle;
+}
+
+static void s_Alloc_CFile(WrenVM* pVM)
+{
+	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
+}
+
+static void s_Fini_CFile(void* pData)
 {
 	Handle_t* pHandle = static_cast<Handle_t*>(pData);
 	(void)pHandle;
@@ -2441,6 +2465,13 @@ WrenForeignClassMethods s_GeneratedClassMethods(
 	{
 		methods.allocate = s_Alloc_CEntityRegistry;
 		methods.finalize = s_Fini_CEntityRegistry;
+
+		return methods;
+	}
+	if (strcmp(pClassName, "CFile") == 0)
+	{
+		methods.allocate = s_Alloc_CFile;
+		methods.finalize = s_Fini_CFile;
 
 		return methods;
 	}
