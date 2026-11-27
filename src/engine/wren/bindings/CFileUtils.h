@@ -6,31 +6,28 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef CFILE_H
-#define CFILE_H
+#ifndef CFILE_UTILS_BINDING_H
+#define CFILE_UTILS_BINDING_H
 
 #pragma once
 
+#ifdef WREN_BIND_CODEGEN
+
 #include "platform.h"
 #include "WrenBind.h"
-#include "utils/Utils.h"
 
-class CFile
+class CFileUtils
 {
 public:
-	static const char* Read(const char* pPath) WREN_BIND_STATIC("read(_)")
-	{
-		static CFixedString s_Contents;
-		s_Contents = CUtils::ReadFile(CFixedString(pPath));
-
-		return s_Contents.c_str();
-	}
-
+	static const char* Read(const char* pPath) WREN_BIND_STATIC("read(_)");
 	static bool Write(const char* pPath, const char* pContents)
-		WREN_BIND_STATIC("write(_,_)")
-	{
-		return CUtils::WriteFile(CFixedString(pPath), CFixedString(pContents));
-	}
+		WREN_BIND_STATIC("write(_,_)");
 };
 
-#endif // CFILE_H
+#else // WREN_BIND_CODEGEN
+
+#include "utils/FileUtils.h"
+
+#endif // !WREN_BIND_CODEGEN
+
+#endif // CFILE_UTILS_BINDING_H

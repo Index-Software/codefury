@@ -62,6 +62,7 @@ set(ENGINE_SRCS
 	src/engine/renderer/text/TextRenderer.cpp
 	thirdparty/gcmgl/src/utils/Utils.cpp
 	src/engine/utils/RadixSort.cpp
+	src/engine/utils/FileUtils.cpp
 	src/engine/utils/StringUtils.cpp
 	src/engine/utils/UniqueID.cpp
 	src/engine/utils/KeyValueLine.cpp
@@ -116,7 +117,10 @@ set(WREN_BIND_INPUTS
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/CMaths.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/IRenderer.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/CTime.h
-	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/CFile.h
+	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/CFileUtils.h
+	${CMAKE_SOURCE_DIR}/src/engine/display/CDisplay.h
+	${CMAKE_SOURCE_DIR}/src/engine/application/Application.h
+	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/Platform.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/Anchor.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/ShaderType.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/LightType.h
@@ -164,6 +168,8 @@ add_custom_command(
 )
 
 list(APPEND ENGINE_SRCS thirdparty/wrenbind/src/Runtime.cpp)
+list(APPEND ENGINE_SRCS src/engine/display/CDisplay.cpp)
+list(APPEND ENGINE_SRCS src/engine/application/Application.cpp)
 list(APPEND ENGINE_SRCS thirdparty/wrenbind/src/Class.cpp)
 list(APPEND ENGINE_SRCS src/engine/wren/wrenbind/WrenForwarders.cpp)
 list(APPEND ENGINE_SRCS src/engine/wren/WrenManager.cpp)

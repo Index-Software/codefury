@@ -27,6 +27,7 @@
 #include "WrenBind.h"
 #include "window/Window.h"
 #include "window/WindowManager.h"
+#include "display/CDisplay.h"
 #include "dbg.h"
 
 #ifdef PLATFORM_PS3
@@ -111,6 +112,7 @@ bool CEngine::Init()
 	}
 
 	IWindow* pWindow = m_pWindowManager->GetWindow();
+	CDisplay::SetNativeWindow(pWindow->GetNativeHandle());
 
 	m_pRenderer = CreateRenderer();
 	if (!m_pRenderer)
@@ -319,6 +321,8 @@ int CEngine::Run()
 
 		m_pDebug->Render();
 		m_pRenderer->EndFrame();
+
+		CDisplay::WaitForFrame();
 	}
 
 	return 0;

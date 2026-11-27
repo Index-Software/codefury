@@ -19,6 +19,7 @@ SOURCES := src/app src/engine src/engine/config src/engine/ecs src/engine/ecs/co
             src/engine/renderer/ibl \
             src/engine/renderer/ui src/engine/renderer/passes \
             src/engine/utils src/engine/debug src/engine/wren src/engine/wren/wrenbind \
+            src/engine/display src/engine/application \
             src/engine/wren/wrenbind/generated \
             thirdparty/mathsfury \
             thirdparty/gcmgl/src \

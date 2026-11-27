@@ -4,13 +4,13 @@ import "engine/renderer/texture" for CTexture
 import "engine/renderer/skybox" for CSkybox
 import "engine/ecs/entity_registry" for CEntityRegistry
 import "engine/ecs/components/camera" for CCamera
-import "engine/ecs/components/mesh_builder" for CMeshBuilder, FaceOrientation_t
+import "engine/renderer/mesh_builder" for CMeshBuilder, FaceOrientation_t
 import "engine/ecs/components/light" for CLight, LightType_t
-import "engine/scene" for CScene
+import "engine/scene/scene" for CScene
 import "engine/renderer/renderer" for IRenderer
-import "engine/input/free_camera" for CFreeCamera
+import "engine/input/controllers/free_camera" for CFreeCamera
 import "engine/renderer/ui" for CUI, Anchor_t
-import "engine/debug" for CDebug
+import "engine/debug/debug" for CDebug
 import "engine/color" for CColor
 import "engine/maths/vector3" for CVector3
 

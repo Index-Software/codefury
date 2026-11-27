@@ -39,7 +39,10 @@
 #include "wren/bindings/CMatrix4.h"
 #include "wren/bindings/CMaths.h"
 #include "wren/bindings/CTime.h"
-#include "wren/bindings/CFile.h"
+#include "wren/bindings/CFileUtils.h"
+#include "display/CDisplay.h"
+#include "application/Application.h"
+#include "wren/bindings/Platform.h"
 #include "wren/bindings/Anchor.h"
 #include "wren/bindings/ShaderType.h"
 #include "wren/bindings/LightType.h"
@@ -1565,14 +1568,58 @@ static void WrenBindForward_CTime_getTimeSinceStartup_0param(WrenVM* pVM)
 	wrenSetSlotDouble(pVM, 0, CTime::GetTimeSinceStartup());
 }
 
-static void WrenBindForward_CFile_read_1param(WrenVM* pVM)
+static void WrenBindForward_CFileUtils_read_1param(WrenVM* pVM)
 {
-	wrenSetSlotString(pVM, 0, CFile::Read(wrenGetSlotString(pVM, 1)));
+	wrenSetSlotString(pVM, 0, CFileUtils::Read(wrenGetSlotString(pVM, 1)));
 }
 
-static void WrenBindForward_CFile_write_2param(WrenVM* pVM)
+static void WrenBindForward_CFileUtils_write_2param(WrenVM* pVM)
 {
-	wrenSetSlotBool(pVM, 0, CFile::Write(wrenGetSlotString(pVM, 1), wrenGetSlotString(pVM, 2)));
+	wrenSetSlotBool(pVM, 0, CFileUtils::Write(wrenGetSlotString(pVM, 1), wrenGetSlotString(pVM, 2)));
+}
+
+static void WrenBindForward_CDisplay_setVSync_1param(WrenVM* pVM)
+{
+	(void)pVM;
+	CDisplay::SetVSync(wrenGetSlotBool(pVM, 1));
+}
+
+static void WrenBindForward_CDisplay_setFrameLimit_1param(WrenVM* pVM)
+{
+	(void)pVM;
+	CDisplay::SetFrameLimit(static_cast<int32>(wrenGetSlotDouble(pVM, 1)));
+}
+
+static void WrenBindForward_CDisplay_setFullscreen_1param(WrenVM* pVM)
+{
+	(void)pVM;
+	CDisplay::SetFullscreen(wrenGetSlotBool(pVM, 1));
+}
+
+static void WrenBindForward_CDisplay_isFullscreen_0param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CDisplay::IsFullscreen());
+}
+
+static void WrenBindForward_CApplication_getPlatform_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CApplication::GetPlatform()));
+}
+
+static void WrenBindForward_CApplication_quit_0param(WrenVM* pVM)
+{
+	(void)pVM;
+	CApplication::Quit();
+}
+
+static void WrenBindForward_Platform_t_PC_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(Platform_t::PC));
+}
+
+static void WrenBindForward_Platform_t_PS3_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(Platform_t::PS3));
 }
 
 static void WrenBindForward_Anchor_t_TopLeft_0param(WrenVM* pVM)
@@ -1953,8 +2000,16 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("CTime", "getDeltaTime()", WrenBindForward_CTime_getDeltaTime_0param, true),
 	BIND("CTime", "getFrameCount()", WrenBindForward_CTime_getFrameCount_0param, true),
 	BIND("CTime", "getTimeSinceStartup()", WrenBindForward_CTime_getTimeSinceStartup_0param, true),
-	BIND("CFile", "read(_)", WrenBindForward_CFile_read_1param, true),
-	BIND("CFile", "write(_,_)", WrenBindForward_CFile_write_2param, true),
+	BIND("CFileUtils", "read(_)", WrenBindForward_CFileUtils_read_1param, true),
+	BIND("CFileUtils", "write(_,_)", WrenBindForward_CFileUtils_write_2param, true),
+	BIND("CDisplay", "setVSync(_)", WrenBindForward_CDisplay_setVSync_1param, true),
+	BIND("CDisplay", "setFrameLimit(_)", WrenBindForward_CDisplay_setFrameLimit_1param, true),
+	BIND("CDisplay", "setFullscreen(_)", WrenBindForward_CDisplay_setFullscreen_1param, true),
+	BIND("CDisplay", "isFullscreen()", WrenBindForward_CDisplay_isFullscreen_0param, true),
+	BIND("CApplication", "getPlatform()", WrenBindForward_CApplication_getPlatform_0param, true),
+	BIND("CApplication", "quit()", WrenBindForward_CApplication_quit_0param, true),
+	BIND("Platform_t", "PC", WrenBindForward_Platform_t_PC_0param, true),
+	BIND("Platform_t", "PS3", WrenBindForward_Platform_t_PS3_0param, true),
 	BIND("Anchor_t", "TopLeft", WrenBindForward_Anchor_t_TopLeft_0param, true),
 	BIND("Anchor_t", "Top", WrenBindForward_Anchor_t_Top_0param, true),
 	BIND("Anchor_t", "TopRight", WrenBindForward_Anchor_t_TopRight_0param, true),
@@ -1983,6 +2038,17 @@ static void s_Alloc_Anchor_t(WrenVM* pVM)
 }
 
 static void s_Fini_Anchor_t(void* pData)
+{
+	Handle_t* pHandle = static_cast<Handle_t*>(pData);
+	(void)pHandle;
+}
+
+static void s_Alloc_CApplication(WrenVM* pVM)
+{
+	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
+}
+
+static void s_Fini_CApplication(void* pData)
 {
 	Handle_t* pHandle = static_cast<Handle_t*>(pData);
 	(void)pHandle;
@@ -2040,6 +2106,17 @@ static void s_Fini_CDebug(void* pData)
 	(void)pHandle;
 }
 
+static void s_Alloc_CDisplay(WrenVM* pVM)
+{
+	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
+}
+
+static void s_Fini_CDisplay(void* pData)
+{
+	Handle_t* pHandle = static_cast<Handle_t*>(pData);
+	(void)pHandle;
+}
+
 static void s_Alloc_CEntityRegistry(WrenVM* pVM)
 {
 	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
@@ -2051,12 +2128,12 @@ static void s_Fini_CEntityRegistry(void* pData)
 	(void)pHandle;
 }
 
-static void s_Alloc_CFile(WrenVM* pVM)
+static void s_Alloc_CFileUtils(WrenVM* pVM)
 {
 	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
 }
 
-static void s_Fini_CFile(void* pData)
+static void s_Fini_CFileUtils(void* pData)
 {
 	Handle_t* pHandle = static_cast<Handle_t*>(pData);
 	(void)pHandle;
@@ -2348,6 +2425,17 @@ static void s_Fini_LightType_t(void* pData)
 	(void)pHandle;
 }
 
+static void s_Alloc_Platform_t(WrenVM* pVM)
+{
+	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
+}
+
+static void s_Fini_Platform_t(void* pData)
+{
+	Handle_t* pHandle = static_cast<Handle_t*>(pData);
+	(void)pHandle;
+}
+
 static void s_Alloc_ShaderType_t(WrenVM* pVM)
 {
 	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
@@ -2433,6 +2521,13 @@ WrenForeignClassMethods s_GeneratedClassMethods(
 
 		return methods;
 	}
+	if (strcmp(pClassName, "CApplication") == 0)
+	{
+		methods.allocate = s_Alloc_CApplication;
+		methods.finalize = s_Fini_CApplication;
+
+		return methods;
+	}
 	if (strcmp(pClassName, "CCamera") == 0)
 	{
 		methods.allocate = s_Alloc_CCamera;
@@ -2461,6 +2556,13 @@ WrenForeignClassMethods s_GeneratedClassMethods(
 
 		return methods;
 	}
+	if (strcmp(pClassName, "CDisplay") == 0)
+	{
+		methods.allocate = s_Alloc_CDisplay;
+		methods.finalize = s_Fini_CDisplay;
+
+		return methods;
+	}
 	if (strcmp(pClassName, "CEntityRegistry") == 0)
 	{
 		methods.allocate = s_Alloc_CEntityRegistry;
@@ -2468,10 +2570,10 @@ WrenForeignClassMethods s_GeneratedClassMethods(
 
 		return methods;
 	}
-	if (strcmp(pClassName, "CFile") == 0)
+	if (strcmp(pClassName, "CFileUtils") == 0)
 	{
-		methods.allocate = s_Alloc_CFile;
-		methods.finalize = s_Fini_CFile;
+		methods.allocate = s_Alloc_CFileUtils;
+		methods.finalize = s_Fini_CFileUtils;
 
 		return methods;
 	}
@@ -2626,6 +2728,13 @@ WrenForeignClassMethods s_GeneratedClassMethods(
 	{
 		methods.allocate = s_Alloc_LightType_t;
 		methods.finalize = s_Fini_LightType_t;
+
+		return methods;
+	}
+	if (strcmp(pClassName, "Platform_t") == 0)
+	{
+		methods.allocate = s_Alloc_Platform_t;
+		methods.finalize = s_Fini_Platform_t;
 
 		return methods;
 	}
