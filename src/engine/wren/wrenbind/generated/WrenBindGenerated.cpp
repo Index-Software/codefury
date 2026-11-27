@@ -19,6 +19,7 @@
 #include "scene/Scene.h"
 #include "renderer/RenderQueue.h"
 #include "input/Input.h"
+#include "audio/Audio.h"
 #include "ecs/EntityRegistry.h"
 #include "wren/bindings/IRenderer.h"
 #include "input/controllers/FreeCamera.h"
@@ -630,6 +631,38 @@ static void WrenBindForward_IInput_getMoveX_0param(WrenVM* pVM)
 static void WrenBindForward_IInput_getMoveY_0param(WrenVM* pVM)
 {
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<IInput>::s_pInstance->GetMoveY()));
+}
+
+static void WrenBindForward_IAudio_loadSound_1param(WrenVM* pVM)
+{
+	CWrenBindArg<SoundHandle>::Set(pVM, CWrenBindSingleton<IAudio>::s_pInstance->LoadSound(wrenGetSlotString(pVM, 1)));
+}
+
+static void WrenBindForward_IAudio_unloadSound_1param(WrenVM* pVM)
+{
+	(void)pVM;
+	CWrenBindSingleton<IAudio>::s_pInstance->UnloadSound(CWrenBindArg<SoundHandle>::Get(pVM, 1));
+}
+
+static void WrenBindForward_IAudio_playSound_1param(WrenVM* pVM)
+{
+	CWrenBindArg<SoundInstanceHandle>::Set(pVM, CWrenBindSingleton<IAudio>::s_pInstance->PlaySound(CWrenBindArg<SoundHandle>::Get(pVM, 1)));
+}
+
+static void WrenBindForward_IAudio_stopSound_1param(WrenVM* pVM)
+{
+	(void)pVM;
+	CWrenBindSingleton<IAudio>::s_pInstance->StopSound(CWrenBindArg<SoundInstanceHandle>::Get(pVM, 1));
+}
+
+static void WrenBindForward_IAudio_isSoundPlaying_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CWrenBindSingleton<IAudio>::s_pInstance->IsSoundPlaying(CWrenBindArg<SoundInstanceHandle>::Get(pVM, 1)));
+}
+
+static void WrenBindForward_IAudio_getSoundTime_1param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, CWrenBindSingleton<IAudio>::s_pInstance->GetSoundTime(CWrenBindArg<SoundInstanceHandle>::Get(pVM, 1)));
 }
 
 static void WrenBindForward_CFreeCamera_init_new_0param(WrenVM* pVM)
@@ -1656,6 +1689,12 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("IInput", "getLookY()", WrenBindForward_IInput_getLookY_0param, true),
 	BIND("IInput", "getMoveX()", WrenBindForward_IInput_getMoveX_0param, true),
 	BIND("IInput", "getMoveY()", WrenBindForward_IInput_getMoveY_0param, true),
+	BIND("IAudio", "loadSound(_)", WrenBindForward_IAudio_loadSound_1param, true),
+	BIND("IAudio", "unloadSound(_)", WrenBindForward_IAudio_unloadSound_1param, true),
+	BIND("IAudio", "playSound(_)", WrenBindForward_IAudio_playSound_1param, true),
+	BIND("IAudio", "stopSound(_)", WrenBindForward_IAudio_stopSound_1param, true),
+	BIND("IAudio", "isSoundPlaying(_)", WrenBindForward_IAudio_isSoundPlaying_1param, true),
+	BIND("IAudio", "getSoundTime(_)", WrenBindForward_IAudio_getSoundTime_1param, true),
 	BIND("CFreeCamera", "init new()", WrenBindForward_CFreeCamera_init_new_0param, false),
 	BIND("CFreeCamera", "update(_,_)", WrenBindForward_CFreeCamera_update_2param, false),
 	BIND("CFreeCamera", "setPosition(_)", WrenBindForward_CFreeCamera_setPosition_1param, false),
@@ -2154,6 +2193,17 @@ static void s_Fini_FaceOrientation_t(void* pData)
 	(void)pHandle;
 }
 
+static void s_Alloc_IAudio(WrenVM* pVM)
+{
+	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
+}
+
+static void s_Fini_IAudio(void* pData)
+{
+	Handle_t* pHandle = static_cast<Handle_t*>(pData);
+	(void)pHandle;
+}
+
 static void s_Alloc_IInput(WrenVM* pVM)
 {
 	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
@@ -2430,6 +2480,13 @@ WrenForeignClassMethods s_GeneratedClassMethods(
 	{
 		methods.allocate = s_Alloc_FaceOrientation_t;
 		methods.finalize = s_Fini_FaceOrientation_t;
+
+		return methods;
+	}
+	if (strcmp(pClassName, "IAudio") == 0)
+	{
+		methods.allocate = s_Alloc_IAudio;
+		methods.finalize = s_Fini_IAudio;
 
 		return methods;
 	}
