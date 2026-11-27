@@ -38,12 +38,18 @@ public:
 		WREN_BIND_SINGLETON("unloadSound(_)", s_pAudio) = 0;
 	virtual SoundInstanceHandle PlaySound(SoundHandle hSound)
 		WREN_BIND_SINGLETON("playSound(_)", s_pAudio) = 0;
+	virtual SoundInstanceHandle PlaySoundAt(SoundHandle hSound, float64 seconds)
+		WREN_BIND_SINGLETON("playSoundAt(_,_)", s_pAudio) = 0;
 	virtual void StopSound(SoundInstanceHandle hInstance)
 		WREN_BIND_SINGLETON("stopSound(_)", s_pAudio) = 0;
 	virtual bool IsSoundPlaying(SoundInstanceHandle hInstance)
 		WREN_BIND_SINGLETON("isSoundPlaying(_)", s_pAudio) = 0;
 	virtual float64 GetSoundTime(SoundInstanceHandle hInstance)
 		WREN_BIND_SINGLETON("getSoundTime(_)", s_pAudio) = 0;
+	virtual void SetSoundPaused(SoundInstanceHandle hInstance, bool isPaused)
+		WREN_BIND_SINGLETON("setSoundPaused(_,_)", s_pAudio) = 0;
+	virtual void SetSoundVolume(SoundInstanceHandle hInstance, float32 volume)
+		WREN_BIND_SINGLETON("setSoundVolume(_,_)", s_pAudio) = 0;
 };
 
 IAudio* CreateAudio();

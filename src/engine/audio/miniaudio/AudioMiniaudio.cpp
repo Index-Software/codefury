@@ -79,7 +79,12 @@ void CAudioMiniaudio::UnloadSound(SoundHandle hSound)
 
 SoundInstanceHandle CAudioMiniaudio::PlaySound(SoundHandle hSound)
 {
-	return m_Mixer.PlaySound(hSound);
+	return m_Mixer.PlaySound(hSound, 0.0);
+}
+
+SoundInstanceHandle CAudioMiniaudio::PlaySoundAt(SoundHandle hSound, float64 seconds)
+{
+	return m_Mixer.PlaySound(hSound, seconds);
 }
 
 void CAudioMiniaudio::StopSound(SoundInstanceHandle hInstance)
@@ -95,6 +100,16 @@ bool CAudioMiniaudio::IsSoundPlaying(SoundInstanceHandle hInstance)
 float64 CAudioMiniaudio::GetSoundTime(SoundInstanceHandle hInstance)
 {
 	return m_Mixer.GetSoundTime(hInstance);
+}
+
+void CAudioMiniaudio::SetSoundPaused(SoundInstanceHandle hInstance, bool isPaused)
+{
+	m_Mixer.SetSoundPaused(hInstance, isPaused);
+}
+
+void CAudioMiniaudio::SetSoundVolume(SoundInstanceHandle hInstance, float32 volume)
+{
+	m_Mixer.SetSoundVolume(hInstance, volume);
 }
 
 void CAudioMiniaudio::DataCallback(

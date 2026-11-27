@@ -705,6 +705,11 @@ static void WrenBindForward_IAudio_playSound_1param(WrenVM* pVM)
 	CWrenBindArg<SoundInstanceHandle>::Set(pVM, CWrenBindSingleton<IAudio>::s_pInstance->PlaySound(CWrenBindArg<SoundHandle>::Get(pVM, 1)));
 }
 
+static void WrenBindForward_IAudio_playSoundAt_2param(WrenVM* pVM)
+{
+	CWrenBindArg<SoundInstanceHandle>::Set(pVM, CWrenBindSingleton<IAudio>::s_pInstance->PlaySoundAt(CWrenBindArg<SoundHandle>::Get(pVM, 1), wrenGetSlotDouble(pVM, 2)));
+}
+
 static void WrenBindForward_IAudio_stopSound_1param(WrenVM* pVM)
 {
 	(void)pVM;
@@ -719,6 +724,18 @@ static void WrenBindForward_IAudio_isSoundPlaying_1param(WrenVM* pVM)
 static void WrenBindForward_IAudio_getSoundTime_1param(WrenVM* pVM)
 {
 	wrenSetSlotDouble(pVM, 0, CWrenBindSingleton<IAudio>::s_pInstance->GetSoundTime(CWrenBindArg<SoundInstanceHandle>::Get(pVM, 1)));
+}
+
+static void WrenBindForward_IAudio_setSoundPaused_2param(WrenVM* pVM)
+{
+	(void)pVM;
+	CWrenBindSingleton<IAudio>::s_pInstance->SetSoundPaused(CWrenBindArg<SoundInstanceHandle>::Get(pVM, 1), wrenGetSlotBool(pVM, 2));
+}
+
+static void WrenBindForward_IAudio_setSoundVolume_2param(WrenVM* pVM)
+{
+	(void)pVM;
+	CWrenBindSingleton<IAudio>::s_pInstance->SetSoundVolume(CWrenBindArg<SoundInstanceHandle>::Get(pVM, 1), static_cast<float32>(wrenGetSlotDouble(pVM, 2)));
 }
 
 static void WrenBindForward_CFreeCamera_init_new_0param(WrenVM* pVM)
@@ -1759,9 +1776,12 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("IAudio", "loadSound(_)", WrenBindForward_IAudio_loadSound_1param, true),
 	BIND("IAudio", "unloadSound(_)", WrenBindForward_IAudio_unloadSound_1param, true),
 	BIND("IAudio", "playSound(_)", WrenBindForward_IAudio_playSound_1param, true),
+	BIND("IAudio", "playSoundAt(_,_)", WrenBindForward_IAudio_playSoundAt_2param, true),
 	BIND("IAudio", "stopSound(_)", WrenBindForward_IAudio_stopSound_1param, true),
 	BIND("IAudio", "isSoundPlaying(_)", WrenBindForward_IAudio_isSoundPlaying_1param, true),
 	BIND("IAudio", "getSoundTime(_)", WrenBindForward_IAudio_getSoundTime_1param, true),
+	BIND("IAudio", "setSoundPaused(_,_)", WrenBindForward_IAudio_setSoundPaused_2param, true),
+	BIND("IAudio", "setSoundVolume(_,_)", WrenBindForward_IAudio_setSoundVolume_2param, true),
 	BIND("CFreeCamera", "init new()", WrenBindForward_CFreeCamera_init_new_0param, false),
 	BIND("CFreeCamera", "update(_,_)", WrenBindForward_CFreeCamera_update_2param, false),
 	BIND("CFreeCamera", "setPosition(_)", WrenBindForward_CFreeCamera_setPosition_1param, false),

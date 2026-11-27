@@ -40,6 +40,8 @@ CAudioMixer::CAudioMixer()
 	for (uint32 i = 0; i < s_AudioMaxChannels; ++i)
 	{
 		m_ChannelFrames[i] = 0;
+		m_ChannelPaused[i] = false;
+		m_ChannelVolume[i] = 1.0f;
 	}
 }
 
@@ -55,8 +57,7 @@ void CAudioMixer::Shutdown()
 		SoundSlot_t& slot = m_Sounds[i];
 		if (slot.m_State != SoundState_t::Free)
 		{
-			CUtlMemory::Free(slot.m_Sound.m_pSamples);
-			slot.m_Sound = Sound_t();
+			ReleaseSound(slot);
 			slot.m_State = SoundState_t::Free;
 		}
 	}
@@ -94,13 +95,31 @@ SoundHandle CAudioMixer::LoadSound(const char* pPath)
 	}
 
 	SoundSlot_t& slot = m_Sounds[slotIndex];
-	if (!DecodeVorbis(data.Base(), uint32(data.Count()), slot.m_Sound))
+	slot.m_pData = static_cast<uint8*>(CUtlMemory::Alloc(data.Count()));
+	if (!slot.m_pData)
 	{
-		Error("[CAudioMixer] Failed to decode %s\n", pPath);
+		Error("[CAudioMixer] Failed to allocate %s\n", pPath);
 
 		return s_InvalidSoundHandle;
 	}
 
+	memcpy(slot.m_pData, data.Base(), data.Count());
+	slot.m_pDecoder = OpenVorbis(
+		slot.m_pData,
+		uint32(data.Count()),
+		slot.m_Sound);
+	if (!slot.m_pDecoder)
+	{
+		Error("[CAudioMixer] Failed to decode %s\n", pPath);
+		CUtlMemory::Free(slot.m_pData);
+		slot.m_pData = CF_NULL;
+
+		return s_InvalidSoundHandle;
+	}
+
+	slot.m_DecodeStart = 0;
+	slot.m_DecodedEnd = 0;
+	DecodeSound(slot, slot.m_Sound.m_SampleRate / 2);
 	slot.m_State = SoundState_t::Loaded;
 
 	return MakeHandle(slotIndex, slot.m_Generation);
@@ -128,7 +147,7 @@ void CAudioMixer::UnloadSound(SoundHandle hSound)
 	pSlot->m_State = SoundState_t::Unloading;
 }
 
-SoundInstanceHandle CAudioMixer::PlaySound(SoundHandle hSound)
+SoundInstanceHandle CAudioMixer::PlaySound(SoundHandle hSound, float64 seconds)
 {
 	SoundSlot_t* pSlot = GetSoundSlot(hSound);
 	if (!pSlot)
@@ -155,12 +174,30 @@ SoundInstanceHandle CAudioMixer::PlaySound(SoundHandle hSound)
 	}
 
 	const Sound_t& sound = pSlot->m_Sound;
+	uint32 startFrame = uint32(seconds * sound.m_SampleRate);
+	if (seconds <= 0.0 || startFrame >= sound.m_FrameCount)
+	{
+		startFrame = 0;
+	}
+
+	if (pSlot->m_pDecoder && (startFrame < pSlot->m_DecodeStart
+		|| startFrame > pSlot->m_DecodedEnd))
+	{
+		SeekVorbis(pSlot->m_pDecoder, startFrame);
+		pSlot->m_DecodeStart = startFrame;
+		pSlot->m_DecodedEnd = startFrame;
+	}
+
+	if (pSlot->m_pDecoder)
+	{
+		DecodeSound(*pSlot, sound.m_SampleRate / 2);
+	}
 
 	AudioCommand_t command;
 	command.m_pSamples = sound.m_pSamples;
-	// 32.32 fixed point source frames per output frame
 	command.m_Step = (uint64(sound.m_SampleRate) << 32) / s_AudioSampleRate;
 	command.m_FrameCount = sound.m_FrameCount;
+	command.m_StartFrame = startFrame;
 	command.m_SoundIndex = GetHandleIndex(hSound);
 	command.m_ChannelIndex = channelIndex;
 	command.m_ChannelCount = sound.m_ChannelCount;
@@ -174,9 +211,12 @@ SoundInstanceHandle CAudioMixer::PlaySound(SoundHandle hSound)
 
 	ChannelSlot_t& channel = m_Channels[channelIndex];
 	channel.m_SampleRate = sound.m_SampleRate;
+	channel.m_SoundIndex = GetHandleIndex(hSound);
 	channel.m_Generation++;
 	channel.m_IsActive = true;
-	m_ChannelFrames[channelIndex] = 0;
+	m_ChannelFrames[channelIndex] = startFrame;
+	m_ChannelPaused[channelIndex] = false;
+	m_ChannelVolume[channelIndex] = 1.0f;
 
 	return MakeHandle(channelIndex, channel.m_Generation);
 }
@@ -216,6 +256,26 @@ float64 CAudioMixer::GetSoundTime(SoundInstanceHandle hInstance) const
 	return float64(frame) / float64(pSlot->m_SampleRate);
 }
 
+void CAudioMixer::SetSoundPaused(SoundInstanceHandle hInstance, bool isPaused)
+{
+	if (!GetChannelSlot(hInstance))
+	{
+		return;
+	}
+
+	m_ChannelPaused[GetHandleIndex(hInstance)] = isPaused;
+}
+
+void CAudioMixer::SetSoundVolume(SoundInstanceHandle hInstance, float32 volume)
+{
+	if (!GetChannelSlot(hInstance))
+	{
+		return;
+	}
+
+	m_ChannelVolume[GetHandleIndex(hInstance)] = volume;
+}
+
 void CAudioMixer::Update()
 {
 	AudioEvent_t event;
@@ -228,11 +288,32 @@ void CAudioMixer::Update()
 		else
 		{
 			SoundSlot_t& slot = m_Sounds[event.m_Index];
-			CUtlMemory::Free(slot.m_Sound.m_pSamples);
-			slot.m_Sound = Sound_t();
+			ReleaseSound(slot);
 			slot.m_Generation++;
 			slot.m_State = SoundState_t::Free;
 		}
+	}
+
+	for (uint32 i = 0; i < s_AudioMaxSounds; ++i)
+	{
+		SoundSlot_t& slot = m_Sounds[i];
+		if (slot.m_State != SoundState_t::Loaded || !slot.m_pDecoder)
+		{
+			continue;
+		}
+
+		uint32 target = slot.m_DecodedEnd + s_AudioDecodeChunk;
+		for (uint32 j = 0; j < s_AudioMaxChannels; ++j)
+		{
+			if (m_Channels[j].m_IsActive && m_Channels[j].m_SoundIndex == i)
+			{
+				const uint32 lead = m_ChannelFrames[j]
+					+ slot.m_Sound.m_SampleRate * s_AudioDecodeLead;
+				target = lead > target ? lead : target;
+			}
+		}
+
+		DecodeSound(slot, target - slot.m_DecodedEnd);
 	}
 }
 
@@ -246,12 +327,20 @@ void CAudioMixer::Mix(float32* pOutput, uint32 frameCount)
 	for (uint32 i = 0; i < s_AudioMaxChannels; ++i)
 	{
 		MixerChannel_t& channel = m_MixerChannels[i];
-		if (!channel.m_IsPlaying)
+		if (!channel.m_IsPlaying || m_ChannelPaused[i])
 		{
 			continue;
 		}
 
-		const bool isPlaying = MixChannel(channel, pOutput, frameCount);
+		const uint32 decodedEnd = m_Sounds[channel.m_SoundIndex].m_DecodedEnd;
+		__sync_synchronize();
+
+		const bool isPlaying = MixChannel(
+			channel,
+			decodedEnd,
+			m_ChannelVolume[i],
+			pOutput,
+			frameCount);
 		m_ChannelFrames[i] = uint32(channel.m_Position >> 32);
 		if (!isPlaying)
 		{
@@ -312,7 +401,7 @@ void CAudioMixer::ProcessCommands()
 		{
 			MixerChannel_t& channel = m_MixerChannels[command.m_ChannelIndex];
 			channel.m_pSamples = command.m_pSamples;
-			channel.m_Position = 0;
+			channel.m_Position = uint64(command.m_StartFrame) << 32;
 			channel.m_Step = command.m_Step;
 			channel.m_FrameCount = command.m_FrameCount;
 			channel.m_SoundIndex = command.m_SoundIndex;
@@ -348,10 +437,12 @@ void CAudioMixer::ProcessCommands()
 
 bool CAudioMixer::MixChannel(
 	MixerChannel_t& channel,
+	uint32 decodedEnd,
+	float32 volume,
 	float32* pOutput,
 	uint32 frameCount)
 {
-	const float32 sampleScale = 1.0f / 32768.0f;
+	const float32 sampleScale = volume / 32768.0f;
 	const float32 fractionScale = 1.0f / 4294967296.0f;
 	const uint64 endPosition = uint64(channel.m_FrameCount) << 32;
 	const uint32 lastFrame = channel.m_FrameCount - 1;
@@ -369,6 +460,13 @@ bool CAudioMixer::MixChannel(
 
 		const uint32 frame = uint32(position >> 32);
 		const uint32 nextFrame = frame < lastFrame ? frame + 1 : frame;
+		if (nextFrame >= decodedEnd)
+		{
+			channel.m_Position = position;
+
+			return true;
+		}
+
 		const float32 fraction =
 			float32(uint32(position & 0xFFFFFFFF)) * fractionScale;
 
@@ -399,6 +497,64 @@ bool CAudioMixer::MixChannel(
 	channel.m_Position = position;
 
 	return true;
+}
+
+void CAudioMixer::DecodeSound(SoundSlot_t& slot, uint32 frameCount)
+{
+	Sound_t& sound = slot.m_Sound;
+	uint32 end = slot.m_DecodedEnd;
+	uint32 last = end + frameCount;
+	if (last > sound.m_FrameCount)
+	{
+		last = sound.m_FrameCount;
+	}
+
+	while (end < last)
+	{
+		const uint32 count = last - end < s_AudioDecodeChunk
+			? last - end
+			: s_AudioDecodeChunk;
+		const uint32 decoded = DecodeVorbis(slot.m_pDecoder, sound, end, count);
+		if (decoded == 0)
+		{
+			memset(
+				sound.m_pSamples + end * sound.m_ChannelCount,
+				0,
+				(sound.m_FrameCount - end) * sound.m_ChannelCount * sizeof(int16));
+			end = sound.m_FrameCount;
+
+			break;
+		}
+
+		end += decoded;
+	}
+
+	__sync_synchronize();
+	slot.m_DecodedEnd = end;
+
+	if (end == sound.m_FrameCount && slot.m_DecodeStart == 0)
+	{
+		CloseVorbis(slot.m_pDecoder);
+		slot.m_pDecoder = CF_NULL;
+		CUtlMemory::Free(slot.m_pData);
+		slot.m_pData = CF_NULL;
+	}
+}
+
+void CAudioMixer::ReleaseSound(SoundSlot_t& slot)
+{
+	if (slot.m_pDecoder)
+	{
+		CloseVorbis(slot.m_pDecoder);
+		slot.m_pDecoder = CF_NULL;
+	}
+
+	CUtlMemory::Free(slot.m_pData);
+	slot.m_pData = CF_NULL;
+	CUtlMemory::Free(slot.m_Sound.m_pSamples);
+	slot.m_Sound = Sound_t();
+	slot.m_DecodeStart = 0;
+	slot.m_DecodedEnd = 0;
 }
 
 void CAudioMixer::StopChannel(uint32 channelIndex)

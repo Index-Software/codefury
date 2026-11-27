@@ -30,9 +30,18 @@ public:
 	SoundHandle LoadSound(const char* pPath) CF_OVERRIDE;
 	void UnloadSound(SoundHandle hSound) CF_OVERRIDE;
 	SoundInstanceHandle PlaySound(SoundHandle hSound) CF_OVERRIDE;
+	SoundInstanceHandle PlaySoundAt(
+		SoundHandle hSound,
+		float64 seconds) CF_OVERRIDE;
 	void StopSound(SoundInstanceHandle hInstance) CF_OVERRIDE;
 	bool IsSoundPlaying(SoundInstanceHandle hInstance) CF_OVERRIDE;
 	float64 GetSoundTime(SoundInstanceHandle hInstance) CF_OVERRIDE;
+	void SetSoundPaused(
+		SoundInstanceHandle hInstance,
+		bool isPaused) CF_OVERRIDE;
+	void SetSoundVolume(
+		SoundInstanceHandle hInstance,
+		float32 volume) CF_OVERRIDE;
 private:
 	static void AudioThread(void* pArg);
 

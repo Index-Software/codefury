@@ -183,7 +183,12 @@ void CAudioPS3::UnloadSound(SoundHandle hSound)
 
 SoundInstanceHandle CAudioPS3::PlaySound(SoundHandle hSound)
 {
-	return m_Mixer.PlaySound(hSound);
+	return m_Mixer.PlaySound(hSound, 0.0);
+}
+
+SoundInstanceHandle CAudioPS3::PlaySoundAt(SoundHandle hSound, float64 seconds)
+{
+	return m_Mixer.PlaySound(hSound, seconds);
 }
 
 void CAudioPS3::StopSound(SoundInstanceHandle hInstance)
@@ -199,6 +204,16 @@ bool CAudioPS3::IsSoundPlaying(SoundInstanceHandle hInstance)
 float64 CAudioPS3::GetSoundTime(SoundInstanceHandle hInstance)
 {
 	return m_Mixer.GetSoundTime(hInstance);
+}
+
+void CAudioPS3::SetSoundPaused(SoundInstanceHandle hInstance, bool isPaused)
+{
+	m_Mixer.SetSoundPaused(hInstance, isPaused);
+}
+
+void CAudioPS3::SetSoundVolume(SoundInstanceHandle hInstance, float32 volume)
+{
+	m_Mixer.SetSoundVolume(hInstance, volume);
 }
 
 void CAudioPS3::AudioThread(void* pArg)

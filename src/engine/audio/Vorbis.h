@@ -14,7 +14,15 @@
 #include "platform.h"
 
 struct Sound_t;
+struct stb_vorbis;
 
-bool DecodeVorbis(const uint8* pData, uint32 size, Sound_t& outSound);
+stb_vorbis* OpenVorbis(const uint8* pData, uint32 size, Sound_t& outSound);
+uint32 DecodeVorbis(
+	stb_vorbis* pVorbis,
+	Sound_t& sound,
+	uint32 firstFrame,
+	uint32 frameCount);
+void SeekVorbis(stb_vorbis* pVorbis, uint32 frame);
+void CloseVorbis(stb_vorbis* pVorbis);
 
 #endif // VORBIS_H

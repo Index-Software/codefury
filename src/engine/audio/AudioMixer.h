@@ -20,6 +20,10 @@ static const uint32 s_AudioMaxSounds = 128;
 static const uint32 s_AudioMaxChannels = 32;
 static const uint32 s_AudioCommandCount = 256;
 static const uint32 s_AudioEventCount = 256;
+static const uint32 s_AudioDecodeChunk = 4096;
+static const uint32 s_AudioDecodeLead = 2;
+
+struct stb_vorbis;
 
 template<typename T, uint32 Size>
 class CAudioQueue
@@ -82,6 +86,7 @@ struct AudioCommand_t
 	const int16* m_pSamples;
 	uint64 m_Step;
 	uint32 m_FrameCount;
+	uint32 m_StartFrame;
 	uint32 m_SoundIndex;
 	uint32 m_ChannelIndex;
 	uint16 m_ChannelCount;
@@ -116,10 +121,18 @@ struct SoundState_t
 struct SoundSlot_t
 {
 	Sound_t m_Sound;
+	stb_vorbis* m_pDecoder;
+	uint8* m_pData;
+	uint32 m_DecodeStart;
+	volatile uint32 m_DecodedEnd;
 	uint16 m_Generation;
 	uint8 m_State;
 
 	SoundSlot_t() :
+		m_pDecoder(CF_NULL),
+		m_pData(CF_NULL),
+		m_DecodeStart(0),
+		m_DecodedEnd(0),
 		m_Generation(0),
 		m_State(SoundState_t::Free)
 	{
@@ -129,6 +142,7 @@ struct SoundSlot_t
 struct ChannelSlot_t
 {
 	uint32 m_SampleRate;
+	uint32 m_SoundIndex;
 	uint16 m_Generation;
 	bool m_IsActive;
 };
@@ -154,10 +168,12 @@ public:
 
 	SoundHandle LoadSound(const char* pPath);
 	void UnloadSound(SoundHandle hSound);
-	SoundInstanceHandle PlaySound(SoundHandle hSound);
+	SoundInstanceHandle PlaySound(SoundHandle hSound, float64 seconds);
 	void StopSound(SoundInstanceHandle hInstance);
 	bool IsSoundPlaying(SoundInstanceHandle hInstance) const;
 	float64 GetSoundTime(SoundInstanceHandle hInstance) const;
+	void SetSoundPaused(SoundInstanceHandle hInstance, bool isPaused);
+	void SetSoundVolume(SoundInstanceHandle hInstance, float32 volume);
 	void Update();
 
 	void Mix(float32* pOutput, uint32 frameCount);
@@ -168,8 +184,12 @@ private:
 	SoundSlot_t* GetSoundSlot(SoundHandle hSound);
 	const ChannelSlot_t* GetChannelSlot(SoundInstanceHandle hInstance) const;
 	void ProcessCommands();
+	void DecodeSound(SoundSlot_t& slot, uint32 frameCount);
+	void ReleaseSound(SoundSlot_t& slot);
 	bool MixChannel(
 		MixerChannel_t& channel,
+		uint32 decodedEnd,
+		float32 volume,
 		float32* pOutput,
 		uint32 frameCount);
 	void StopChannel(uint32 channelIndex);
@@ -180,6 +200,8 @@ private:
 	MixerChannel_t m_MixerChannels[s_AudioMaxChannels];
 	ChannelSlot_t m_Channels[s_AudioMaxChannels];
 	volatile uint32 m_ChannelFrames[s_AudioMaxChannels];
+	volatile bool m_ChannelPaused[s_AudioMaxChannels];
+	volatile float32 m_ChannelVolume[s_AudioMaxChannels];
 };
 
 #endif // AUDIO_MIXER_H
