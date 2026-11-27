@@ -40,6 +40,10 @@ public:
 		WREN_BIND_SINGLETON("playSound(_)", s_pAudio) = 0;
 	virtual void StopSound(SoundInstanceHandle hInstance)
 		WREN_BIND_SINGLETON("stopSound(_)", s_pAudio) = 0;
+	virtual bool IsSoundPlaying(SoundInstanceHandle hInstance)
+		WREN_BIND_SINGLETON("isSoundPlaying(_)", s_pAudio) = 0;
+	virtual float64 GetSoundTime(SoundInstanceHandle hInstance)
+		WREN_BIND_SINGLETON("getSoundTime(_)", s_pAudio) = 0;
 };
 
 IAudio* CreateAudio();

@@ -37,6 +37,10 @@ CAudioMixer::CAudioMixer()
 {
 	memset(m_MixerChannels, 0, sizeof(m_MixerChannels));
 	memset(m_Channels, 0, sizeof(m_Channels));
+	for (uint32 i = 0; i < s_AudioMaxChannels; ++i)
+	{
+		m_ChannelFrames[i] = 0;
+	}
 }
 
 CAudioMixer::~CAudioMixer()
@@ -169,23 +173,17 @@ SoundInstanceHandle CAudioMixer::PlaySound(SoundHandle hSound)
 	}
 
 	ChannelSlot_t& channel = m_Channels[channelIndex];
+	channel.m_SampleRate = sound.m_SampleRate;
 	channel.m_Generation++;
 	channel.m_IsActive = true;
+	m_ChannelFrames[channelIndex] = 0;
 
 	return MakeHandle(channelIndex, channel.m_Generation);
 }
 
 void CAudioMixer::StopSound(SoundInstanceHandle hInstance)
 {
-	const uint32 channelIndex = GetHandleIndex(hInstance);
-	if (channelIndex >= s_AudioMaxChannels)
-	{
-		return;
-	}
-
-	const ChannelSlot_t& channel = m_Channels[channelIndex];
-	if (!channel.m_IsActive
-		|| channel.m_Generation != GetHandleGeneration(hInstance))
+	if (!GetChannelSlot(hInstance))
 	{
 		return;
 	}
@@ -193,11 +191,29 @@ void CAudioMixer::StopSound(SoundInstanceHandle hInstance)
 	AudioCommand_t command;
 	memset(&command, 0, sizeof(command));
 	command.m_Type = AudioCommandType_t::Stop;
-	command.m_ChannelIndex = channelIndex;
+	command.m_ChannelIndex = GetHandleIndex(hInstance);
 	if (!m_Commands.Push(command))
 	{
 		Warning("[CAudioMixer] Command queue full, sound not stopped\n");
 	}
+}
+
+bool CAudioMixer::IsSoundPlaying(SoundInstanceHandle hInstance) const
+{
+	return GetChannelSlot(hInstance) != CF_NULL;
+}
+
+float64 CAudioMixer::GetSoundTime(SoundInstanceHandle hInstance) const
+{
+	const ChannelSlot_t* pSlot = GetChannelSlot(hInstance);
+	if (!pSlot)
+	{
+		return 0.0;
+	}
+
+	const uint32 frame = m_ChannelFrames[GetHandleIndex(hInstance)];
+
+	return float64(frame) / float64(pSlot->m_SampleRate);
 }
 
 void CAudioMixer::Update()
@@ -235,7 +251,9 @@ void CAudioMixer::Mix(float32* pOutput, uint32 frameCount)
 			continue;
 		}
 
-		if (!MixChannel(channel, pOutput, frameCount))
+		const bool isPlaying = MixChannel(channel, pOutput, frameCount);
+		m_ChannelFrames[i] = uint32(channel.m_Position >> 32);
+		if (!isPlaying)
 		{
 			StopChannel(i);
 		}
@@ -259,6 +277,25 @@ SoundSlot_t* CAudioMixer::GetSoundSlot(SoundHandle hSound)
 	SoundSlot_t& slot = m_Sounds[soundIndex];
 	if (slot.m_State != SoundState_t::Loaded
 		|| slot.m_Generation != GetHandleGeneration(hSound))
+	{
+		return CF_NULL;
+	}
+
+	return &slot;
+}
+
+const ChannelSlot_t* CAudioMixer::GetChannelSlot(
+	SoundInstanceHandle hInstance) const
+{
+	const uint32 channelIndex = GetHandleIndex(hInstance);
+	if (channelIndex >= s_AudioMaxChannels)
+	{
+		return CF_NULL;
+	}
+
+	const ChannelSlot_t& slot = m_Channels[channelIndex];
+	if (!slot.m_IsActive
+		|| slot.m_Generation != GetHandleGeneration(hInstance))
 	{
 		return CF_NULL;
 	}

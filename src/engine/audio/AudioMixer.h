@@ -128,6 +128,7 @@ struct SoundSlot_t
 
 struct ChannelSlot_t
 {
+	uint32 m_SampleRate;
 	uint16 m_Generation;
 	bool m_IsActive;
 };
@@ -155,6 +156,8 @@ public:
 	void UnloadSound(SoundHandle hSound);
 	SoundInstanceHandle PlaySound(SoundHandle hSound);
 	void StopSound(SoundInstanceHandle hInstance);
+	bool IsSoundPlaying(SoundInstanceHandle hInstance) const;
+	float64 GetSoundTime(SoundInstanceHandle hInstance) const;
 	void Update();
 
 	void Mix(float32* pOutput, uint32 frameCount);
@@ -163,6 +166,7 @@ private:
 	CAudioMixer& operator=(const CAudioMixer&);
 
 	SoundSlot_t* GetSoundSlot(SoundHandle hSound);
+	const ChannelSlot_t* GetChannelSlot(SoundInstanceHandle hInstance) const;
 	void ProcessCommands();
 	bool MixChannel(
 		MixerChannel_t& channel,
@@ -175,6 +179,7 @@ private:
 	CAudioQueue<AudioEvent_t, s_AudioEventCount> m_Events;
 	MixerChannel_t m_MixerChannels[s_AudioMaxChannels];
 	ChannelSlot_t m_Channels[s_AudioMaxChannels];
+	volatile uint32 m_ChannelFrames[s_AudioMaxChannels];
 };
 
 #endif // AUDIO_MIXER_H

@@ -3,4 +3,6 @@ class IAudio {
   foreign static unloadSound(sound)
   foreign static playSound(sound)
   foreign static stopSound(instance)
+  foreign static isSoundPlaying(instance)
+  foreign static getSoundTime(instance)
 }

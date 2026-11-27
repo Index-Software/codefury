@@ -191,6 +191,16 @@ void CAudioPS3::StopSound(SoundInstanceHandle hInstance)
 	m_Mixer.StopSound(hInstance);
 }
 
+bool CAudioPS3::IsSoundPlaying(SoundInstanceHandle hInstance)
+{
+	return m_Mixer.IsSoundPlaying(hInstance);
+}
+
+float64 CAudioPS3::GetSoundTime(SoundInstanceHandle hInstance)
+{
+	return m_Mixer.GetSoundTime(hInstance);
+}
+
 void CAudioPS3::AudioThread(void* pArg)
 {
 	CAudioPS3* pAudio = static_cast<CAudioPS3*>(pArg);

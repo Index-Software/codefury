@@ -87,6 +87,16 @@ void CAudioMiniaudio::StopSound(SoundInstanceHandle hInstance)
 	m_Mixer.StopSound(hInstance);
 }
 
+bool CAudioMiniaudio::IsSoundPlaying(SoundInstanceHandle hInstance)
+{
+	return m_Mixer.IsSoundPlaying(hInstance);
+}
+
+float64 CAudioMiniaudio::GetSoundTime(SoundInstanceHandle hInstance)
+{
+	return m_Mixer.GetSoundTime(hInstance);
+}
+
 void CAudioMiniaudio::DataCallback(
 	ma_device* pDevice,
 	void* pOutput,

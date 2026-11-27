@@ -31,6 +31,8 @@ public:
 	void UnloadSound(SoundHandle hSound) CF_OVERRIDE;
 	SoundInstanceHandle PlaySound(SoundHandle hSound) CF_OVERRIDE;
 	void StopSound(SoundInstanceHandle hInstance) CF_OVERRIDE;
+	bool IsSoundPlaying(SoundInstanceHandle hInstance) CF_OVERRIDE;
+	float64 GetSoundTime(SoundInstanceHandle hInstance) CF_OVERRIDE;
 private:
 	static void AudioThread(void* pArg);
 
