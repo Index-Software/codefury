@@ -7,8 +7,10 @@
 //===----------------------------------------------------------------------===//
 
 #include "InputGLFW.h"
+#include "utils/Time.h"
 #include "utils/UtlMemory.h"
 #include <GLFW/glfw3.h>
+#include <string.h>
 #include <new>
 
 static const float32 s_LookScale = 0.002f;
@@ -19,9 +21,13 @@ CInputGLFW::CInputGLFW() :
 	m_PreviousMouseY(0.0),
 	m_AccumulatedLookX(0.0f),
 	m_AccumulatedLookY(0.0f),
+	m_KeyEventCount(0),
+	m_PendingKeyEventCount(0),
 	m_IsMouseActive(false),
 	m_HasMouseOrigin(false)
 {
+	memset(m_KeyState, 0, sizeof(m_KeyState));
+	memset(m_LastKeyState, 0, sizeof(m_LastKeyState));
 }
 
 CInputGLFW::~CInputGLFW()
@@ -36,6 +42,10 @@ int32 CInputGLFW::Init()
 
 void CInputGLFW::Shutdown()
 {
+	if (m_pWindow)
+	{
+		SetMouseActive(false);
+	}
 }
 
 void CInputGLFW::Update()
@@ -45,15 +55,22 @@ void CInputGLFW::Update()
 		return;
 	}
 
-	if (m_IsMouseActive && glfwGetKey(m_pWindow, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+	memcpy(m_LastKeyState, m_KeyState, sizeof(m_KeyState));
+	for (int32 i = 0; i < m_PendingKeyEventCount; i++)
 	{
-		SetMouseActive(false);
+		const KeyEvent_t& event = m_PendingKeyEvents[i];
+		if (event.m_Key >= 0 && event.m_Key < s_MaxKeys)
+		{
+			m_KeyState[event.m_Key] = event.m_IsPress;
+		}
 	}
-	else if (!m_IsMouseActive &&
-		glfwGetMouseButton(m_pWindow, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-	{
-		SetMouseActive(true);
-	}
+
+	memcpy(
+		m_KeyEvents,
+		m_PendingKeyEvents,
+		m_PendingKeyEventCount * sizeof(KeyEvent_t));
+	m_KeyEventCount = m_PendingKeyEventCount;
+	m_PendingKeyEventCount = 0;
 
 	m_AccumulatedLookX = 0.0f;
 	m_AccumulatedLookY = 0.0f;
@@ -81,8 +98,23 @@ void CInputGLFW::SetWindow(void* pWindow)
 	m_pWindow = static_cast<GLFWwindow*>(pWindow);
 	if (m_pWindow)
 	{
+		glfwSetWindowUserPointer(m_pWindow, this);
+		glfwSetKeyCallback(m_pWindow, OnKey);
 		SetMouseActive(true);
 	}
+}
+
+void CInputGLFW::SetMouseCaptured(bool isCaptured)
+{
+	if (m_pWindow)
+	{
+		SetMouseActive(isCaptured);
+	}
+}
+
+bool CInputGLFW::GetMouseCaptured()
+{
+	return m_IsMouseActive;
 }
 
 float32 CInputGLFW::GetLookX()
@@ -133,6 +165,116 @@ float32 CInputGLFW::GetMoveY()
 	}
 
 	return moveY;
+}
+
+bool CInputGLFW::IsKeyDown(int32 key)
+{
+	if (key < 0 || key >= s_MaxKeys)
+	{
+		return false;
+	}
+
+	return m_KeyState[key];
+}
+
+bool CInputGLFW::WasKeyPressed(int32 key)
+{
+	if (key < 0 || key >= s_MaxKeys)
+	{
+		return false;
+	}
+
+	return m_KeyState[key] && !m_LastKeyState[key];
+}
+
+bool CInputGLFW::WasKeyReleased(int32 key)
+{
+	if (key < 0 || key >= s_MaxKeys)
+	{
+		return false;
+	}
+
+	return !m_KeyState[key] && m_LastKeyState[key];
+}
+
+int32 CInputGLFW::GetKeyEventCount()
+{
+	return m_KeyEventCount;
+}
+
+int32 CInputGLFW::GetKeyEventKey(int32 index)
+{
+	if (index < 0 || index >= m_KeyEventCount)
+	{
+		return 0;
+	}
+
+	return m_KeyEvents[index].m_Key;
+}
+
+int32 CInputGLFW::GetKeyEventMods(int32 index)
+{
+	if (index < 0 || index >= m_KeyEventCount)
+	{
+		return 0;
+	}
+
+	return m_KeyEvents[index].m_Mods;
+}
+
+bool CInputGLFW::WasKeyEventPressed(int32 index)
+{
+	if (index < 0 || index >= m_KeyEventCount)
+	{
+		return false;
+	}
+
+	return m_KeyEvents[index].m_IsPress;
+}
+
+bool CInputGLFW::WasKeyEventReleased(int32 index)
+{
+	if (index < 0 || index >= m_KeyEventCount)
+	{
+		return false;
+	}
+
+	return !m_KeyEvents[index].m_IsPress;
+}
+
+float64 CInputGLFW::GetKeyEventTime(int32 index)
+{
+	if (index < 0 || index >= m_KeyEventCount)
+	{
+		return 0.0;
+	}
+
+	return m_KeyEvents[index].m_Time;
+}
+
+void CInputGLFW::OnKey(
+	GLFWwindow* pWindow,
+	int key,
+	int scancode,
+	int action,
+	int mods)
+{
+	CInputGLFW* pInput =
+		static_cast<CInputGLFW*>(glfwGetWindowUserPointer(pWindow));
+	if (!pInput || action == GLFW_REPEAT
+		|| pInput->m_PendingKeyEventCount >= s_MaxKeyEvents)
+	{
+		return;
+	}
+
+	KeyEvent_t& event =
+		pInput->m_PendingKeyEvents[pInput->m_PendingKeyEventCount];
+	pInput->m_PendingKeyEventCount++;
+
+	event.m_Time = CTime::GetTimeSinceStartup();
+	event.m_Key = key;
+	event.m_Mods = mods;
+	event.m_IsPress = (action == GLFW_PRESS);
 }
 
 void CInputGLFW::SetMouseActive(bool active)

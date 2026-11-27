@@ -613,6 +613,17 @@ static void WrenBindForward_CRenderQueueManager_setGlobalEnvironmentMap_1param(W
 	CWrenBindSingleton<CRenderQueueManager>::s_pInstance->SetGlobalEnvironmentMap(static_cast<CTexture*>(HandleToPtr(*static_cast<Handle_t*>(wrenGetSlotForeign(pVM, 1)))));
 }
 
+static void WrenBindForward_IInput_setMouseCaptured_1param(WrenVM* pVM)
+{
+	(void)pVM;
+	CWrenBindSingleton<IInput>::s_pInstance->SetMouseCaptured(wrenGetSlotBool(pVM, 1));
+}
+
+static void WrenBindForward_IInput_getMouseCaptured_0param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CWrenBindSingleton<IInput>::s_pInstance->GetMouseCaptured());
+}
+
 static void WrenBindForward_IInput_getLookX_0param(WrenVM* pVM)
 {
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<IInput>::s_pInstance->GetLookX()));
@@ -631,6 +642,51 @@ static void WrenBindForward_IInput_getMoveX_0param(WrenVM* pVM)
 static void WrenBindForward_IInput_getMoveY_0param(WrenVM* pVM)
 {
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<IInput>::s_pInstance->GetMoveY()));
+}
+
+static void WrenBindForward_IInput_isKeyDown_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CWrenBindSingleton<IInput>::s_pInstance->IsKeyDown(static_cast<int32>(wrenGetSlotDouble(pVM, 1))));
+}
+
+static void WrenBindForward_IInput_wasKeyPressed_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CWrenBindSingleton<IInput>::s_pInstance->WasKeyPressed(static_cast<int32>(wrenGetSlotDouble(pVM, 1))));
+}
+
+static void WrenBindForward_IInput_wasKeyReleased_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CWrenBindSingleton<IInput>::s_pInstance->WasKeyReleased(static_cast<int32>(wrenGetSlotDouble(pVM, 1))));
+}
+
+static void WrenBindForward_IInput_getKeyEventCount_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<IInput>::s_pInstance->GetKeyEventCount()));
+}
+
+static void WrenBindForward_IInput_getKeyEventKey_1param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<IInput>::s_pInstance->GetKeyEventKey(static_cast<int32>(wrenGetSlotDouble(pVM, 1)))));
+}
+
+static void WrenBindForward_IInput_getKeyEventMods_1param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<IInput>::s_pInstance->GetKeyEventMods(static_cast<int32>(wrenGetSlotDouble(pVM, 1)))));
+}
+
+static void WrenBindForward_IInput_wasKeyEventPressed_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CWrenBindSingleton<IInput>::s_pInstance->WasKeyEventPressed(static_cast<int32>(wrenGetSlotDouble(pVM, 1))));
+}
+
+static void WrenBindForward_IInput_wasKeyEventReleased_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CWrenBindSingleton<IInput>::s_pInstance->WasKeyEventReleased(static_cast<int32>(wrenGetSlotDouble(pVM, 1))));
+}
+
+static void WrenBindForward_IInput_getKeyEventTime_1param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, CWrenBindSingleton<IInput>::s_pInstance->GetKeyEventTime(static_cast<int32>(wrenGetSlotDouble(pVM, 1))));
 }
 
 static void WrenBindForward_IAudio_loadSound_1param(WrenVM* pVM)
@@ -1685,10 +1741,21 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("CRenderQueueManager", "clear()", WrenBindForward_CRenderQueueManager_clear_0param, true),
 	BIND("CRenderQueueManager", "setGlobalEnvironmentMap(_)", WrenBindForward_CRenderQueueManager_setGlobalEnvironmentMap_1param, true),
 	BIND("CRenderQueueManager", "render(_)", WrenFwd_CRenderQueueManager_Render, true),
+	BIND("IInput", "setMouseCaptured(_)", WrenBindForward_IInput_setMouseCaptured_1param, true),
+	BIND("IInput", "getMouseCaptured()", WrenBindForward_IInput_getMouseCaptured_0param, true),
 	BIND("IInput", "getLookX()", WrenBindForward_IInput_getLookX_0param, true),
 	BIND("IInput", "getLookY()", WrenBindForward_IInput_getLookY_0param, true),
 	BIND("IInput", "getMoveX()", WrenBindForward_IInput_getMoveX_0param, true),
 	BIND("IInput", "getMoveY()", WrenBindForward_IInput_getMoveY_0param, true),
+	BIND("IInput", "isKeyDown(_)", WrenBindForward_IInput_isKeyDown_1param, true),
+	BIND("IInput", "wasKeyPressed(_)", WrenBindForward_IInput_wasKeyPressed_1param, true),
+	BIND("IInput", "wasKeyReleased(_)", WrenBindForward_IInput_wasKeyReleased_1param, true),
+	BIND("IInput", "getKeyEventCount()", WrenBindForward_IInput_getKeyEventCount_0param, true),
+	BIND("IInput", "getKeyEventKey(_)", WrenBindForward_IInput_getKeyEventKey_1param, true),
+	BIND("IInput", "getKeyEventMods(_)", WrenBindForward_IInput_getKeyEventMods_1param, true),
+	BIND("IInput", "wasKeyEventPressed(_)", WrenBindForward_IInput_wasKeyEventPressed_1param, true),
+	BIND("IInput", "wasKeyEventReleased(_)", WrenBindForward_IInput_wasKeyEventReleased_1param, true),
+	BIND("IInput", "getKeyEventTime(_)", WrenBindForward_IInput_getKeyEventTime_1param, true),
 	BIND("IAudio", "loadSound(_)", WrenBindForward_IAudio_loadSound_1param, true),
 	BIND("IAudio", "unloadSound(_)", WrenBindForward_IAudio_unloadSound_1param, true),
 	BIND("IAudio", "playSound(_)", WrenBindForward_IAudio_playSound_1param, true),
