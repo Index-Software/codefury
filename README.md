@@ -39,6 +39,7 @@ codefury is a C++ game engine targeting PlayStation 3 (GCM) and Linux (x86_64, O
 - UI
 - [MSDF](https://github.com/Chlumsky/msdf-atlas-gen) text rendering
 - [Wren](https://github.com/wren-lang/wren) scripting
+- Audio playback
 
 ## Usage
 
