@@ -763,6 +763,16 @@ static void WrenBindForward_CInputActions_wasReleased_1param(WrenVM* pVM)
 	wrenSetSlotBool(pVM, 0, CInputActions::WasReleased(wrenGetSlotString(pVM, 1)));
 }
 
+static void WrenBindForward_CInputActions_getPressedTime_1param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, CInputActions::GetPressedTime(wrenGetSlotString(pVM, 1)));
+}
+
+static void WrenBindForward_CInputActions_getReleasedTime_1param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, CInputActions::GetReleasedTime(wrenGetSlotString(pVM, 1)));
+}
+
 static void WrenBindForward_IAudio_loadSound_1param(WrenVM* pVM)
 {
 	CWrenBindArg<SoundHandle>::Set(pVM, CWrenBindSingleton<IAudio>::s_pInstance->LoadSound(wrenGetSlotString(pVM, 1)));
@@ -1939,6 +1949,8 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("CInputActions", "isDown(_)", WrenBindForward_CInputActions_isDown_1param, true),
 	BIND("CInputActions", "wasPressed(_)", WrenBindForward_CInputActions_wasPressed_1param, true),
 	BIND("CInputActions", "wasReleased(_)", WrenBindForward_CInputActions_wasReleased_1param, true),
+	BIND("CInputActions", "getPressedTime(_)", WrenBindForward_CInputActions_getPressedTime_1param, true),
+	BIND("CInputActions", "getReleasedTime(_)", WrenBindForward_CInputActions_getReleasedTime_1param, true),
 	BIND("IAudio", "loadSound(_)", WrenBindForward_IAudio_loadSound_1param, true),
 	BIND("IAudio", "unloadSound(_)", WrenBindForward_IAudio_unloadSound_1param, true),
 	BIND("IAudio", "playSound(_)", WrenBindForward_IAudio_playSound_1param, true),

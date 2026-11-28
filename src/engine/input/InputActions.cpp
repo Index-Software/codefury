@@ -179,6 +179,40 @@ int32 CInputActions::GetBindingMods(const char* pName, int32 index)
 	return pAction->m_Bindings[index].m_Mods;
 }
 
+static float64 GetEventTime(const char* pName, bool isPress)
+{
+	const InputAction_t* pAction = FindAction(pName);
+	if (!pAction || !s_pActiveInput)
+	{
+		return 0.0;
+	}
+
+	float64 time = 0.0;
+	for (int32 event = 0; event < s_pActiveInput->GetKeyEventCount(); event++)
+	{
+		const bool isMatch = isPress
+			? s_pActiveInput->WasKeyEventPressed(event)
+			: s_pActiveInput->WasKeyEventReleased(event);
+		if (!isMatch)
+		{
+			continue;
+		}
+
+		const int32 key = s_pActiveInput->GetKeyEventKey(event);
+		const int32 mods = s_pActiveInput->GetKeyEventMods(event) & s_ModsMask;
+		for (int32 i = 0; i < pAction->m_BindingCount; i++)
+		{
+			const InputBinding_t& binding = pAction->m_Bindings[i];
+			if (binding.m_Key == key && (!isPress || binding.m_Mods == mods))
+			{
+				time = s_pActiveInput->GetKeyEventTime(event);
+			}
+		}
+	}
+
+	return time;
+}
+
 bool CInputActions::IsDown(const char* pName)
 {
 	const InputAction_t* pAction = FindAction(pName);
@@ -256,4 +290,14 @@ bool CInputActions::WasReleased(const char* pName)
 	}
 
 	return false;
+}
+
+float64 CInputActions::GetPressedTime(const char* pName)
+{
+	return GetEventTime(pName, true);
+}
+
+float64 CInputActions::GetReleasedTime(const char* pName)
+{
+	return GetEventTime(pName, false);
 }

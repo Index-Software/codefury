@@ -9,6 +9,8 @@ class CInputActions {
   foreign static isDown(name)
   foreign static wasPressed(name)
   foreign static wasReleased(name)
+  foreign static getPressedTime(name)
+  foreign static getReleasedTime(name)
 }
 
 class InputMods_t {

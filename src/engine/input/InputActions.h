@@ -54,6 +54,10 @@ public:
 		WREN_BIND_STATIC("wasPressed(_)");
 	static bool WasReleased(const char* pName)
 		WREN_BIND_STATIC("wasReleased(_)");
+	static float64 GetPressedTime(const char* pName)
+		WREN_BIND_STATIC("getPressedTime(_)");
+	static float64 GetReleasedTime(const char* pName)
+		WREN_BIND_STATIC("getReleasedTime(_)");
 };
 
 #endif // INPUTACTIONS_H
