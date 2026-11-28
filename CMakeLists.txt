@@ -29,6 +29,7 @@ set(ENGINE_SRCS
 	src/engine/ecs/components/Mesh.cpp
 	src/engine/ecs/components/Camera.cpp
 	src/engine/input/InputManager.cpp
+	src/engine/input/InputActions.cpp
 	src/engine/input/controllers/FreeCamera.cpp
 	src/engine/audio/AudioManager.cpp
 	src/engine/audio/AudioMixer.cpp
@@ -100,6 +101,7 @@ set(WREN_BIND_INPUTS
 	${CMAKE_SOURCE_DIR}/src/engine/scene/Scene.h
 	${CMAKE_SOURCE_DIR}/src/engine/renderer/RenderQueue.h
 	${CMAKE_SOURCE_DIR}/src/engine/input/Input.h
+	${CMAKE_SOURCE_DIR}/src/engine/input/InputActions.h
 	${CMAKE_SOURCE_DIR}/src/engine/audio/Audio.h
 	${CMAKE_SOURCE_DIR}/src/engine/input/controllers/FreeCamera.h
 	${CMAKE_SOURCE_DIR}/src/engine/renderer/Skybox.h
@@ -124,6 +126,7 @@ set(WREN_BIND_INPUTS
 	${CMAKE_SOURCE_DIR}/src/engine/display/CDisplay.h
 	${CMAKE_SOURCE_DIR}/src/engine/application/Application.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/Platform.h
+	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/InputMods.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/Anchor.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/ShaderType.h
 	${CMAKE_SOURCE_DIR}/src/engine/wren/bindings/LightType.h

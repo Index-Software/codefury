@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "display/CDisplay.h"
+#include "input/InputActions.h"
 #include "utils/Time.h"
 #include "window/Window.h"
 
@@ -16,6 +17,28 @@ static const float64 s_FrameWaitMargin = 0.001;
 static IWindow* s_pWindow = CF_NULL;
 static float64 s_FrameDeadline = 0.0;
 static int32 s_FrameLimit = 0;
+
+static const char* const s_ToggleFullscreenAction = "ToggleFullscreen";
+
+static const int32 s_KeyEnter = 257;
+static const int32 s_KeyF11 = 300;
+
+void CDisplay::Init()
+{
+	CInputActions::Bind(s_ToggleFullscreenAction, s_KeyF11, InputMods_t::None);
+	CInputActions::Bind(
+		s_ToggleFullscreenAction,
+		s_KeyEnter,
+		InputMods_t::Alt);
+}
+
+void CDisplay::Update()
+{
+	if (CInputActions::WasPressed(s_ToggleFullscreenAction))
+	{
+		SetFullscreen(!IsFullscreen());
+	}
+}
 
 void CDisplay::SetVSync(bool isEnabled)
 {

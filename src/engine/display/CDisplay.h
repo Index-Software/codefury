@@ -19,6 +19,9 @@ class IWindow;
 class CDisplay
 {
 public:
+	static void Init();
+	static void Update();
+
 	static void SetVSync(bool isEnabled) WREN_BIND_STATIC("setVSync(_)");
 	static void SetFrameLimit(int32 fps) WREN_BIND_STATIC("setFrameLimit(_)");
 	static void SetFullscreen(

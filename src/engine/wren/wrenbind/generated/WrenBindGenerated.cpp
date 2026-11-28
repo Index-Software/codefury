@@ -22,6 +22,7 @@
 #include "audio/Audio.h"
 #include "ecs/EntityRegistry.h"
 #include "wren/bindings/IRenderer.h"
+#include "input/InputActions.h"
 #include "input/controllers/FreeCamera.h"
 #include "renderer/Skybox.h"
 #include "renderer/shader/Shader.h"
@@ -43,6 +44,7 @@
 #include "display/CDisplay.h"
 #include "application/Application.h"
 #include "wren/bindings/Platform.h"
+#include "wren/bindings/InputMods.h"
 #include "wren/bindings/Anchor.h"
 #include "wren/bindings/ShaderType.h"
 #include "wren/bindings/LightType.h"
@@ -713,6 +715,52 @@ static void WrenBindForward_IInput_wasKeyEventReleased_1param(WrenVM* pVM)
 static void WrenBindForward_IInput_getKeyEventTime_1param(WrenVM* pVM)
 {
 	wrenSetSlotDouble(pVM, 0, CWrenBindSingleton<IInput>::s_pInstance->GetKeyEventTime(static_cast<int32>(wrenGetSlotDouble(pVM, 1))));
+}
+
+static void WrenBindForward_CInputActions_bind_3param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CInputActions::Bind(wrenGetSlotString(pVM, 1), static_cast<int32>(wrenGetSlotDouble(pVM, 2)), static_cast<int32>(wrenGetSlotDouble(pVM, 3))));
+}
+
+static void WrenBindForward_CInputActions_setBinding_4param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CInputActions::SetBinding(wrenGetSlotString(pVM, 1), static_cast<int32>(wrenGetSlotDouble(pVM, 2)), static_cast<int32>(wrenGetSlotDouble(pVM, 3)), static_cast<int32>(wrenGetSlotDouble(pVM, 4))));
+}
+
+static void WrenBindForward_CInputActions_clearBindings_1param(WrenVM* pVM)
+{
+	(void)pVM;
+	CInputActions::ClearBindings(wrenGetSlotString(pVM, 1));
+}
+
+static void WrenBindForward_CInputActions_getBindingCount_1param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CInputActions::GetBindingCount(wrenGetSlotString(pVM, 1))));
+}
+
+static void WrenBindForward_CInputActions_getBindingKey_2param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CInputActions::GetBindingKey(wrenGetSlotString(pVM, 1), static_cast<int32>(wrenGetSlotDouble(pVM, 2)))));
+}
+
+static void WrenBindForward_CInputActions_getBindingMods_2param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CInputActions::GetBindingMods(wrenGetSlotString(pVM, 1), static_cast<int32>(wrenGetSlotDouble(pVM, 2)))));
+}
+
+static void WrenBindForward_CInputActions_isDown_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CInputActions::IsDown(wrenGetSlotString(pVM, 1)));
+}
+
+static void WrenBindForward_CInputActions_wasPressed_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CInputActions::WasPressed(wrenGetSlotString(pVM, 1)));
+}
+
+static void WrenBindForward_CInputActions_wasReleased_1param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, CInputActions::WasReleased(wrenGetSlotString(pVM, 1)));
 }
 
 static void WrenBindForward_IAudio_loadSound_1param(WrenVM* pVM)
@@ -1644,6 +1692,31 @@ static void WrenBindForward_Platform_t_PS3_0param(WrenVM* pVM)
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(Platform_t::PS3));
 }
 
+static void WrenBindForward_InputMods_t_None_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(InputMods_t::None));
+}
+
+static void WrenBindForward_InputMods_t_Shift_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(InputMods_t::Shift));
+}
+
+static void WrenBindForward_InputMods_t_Control_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(InputMods_t::Control));
+}
+
+static void WrenBindForward_InputMods_t_Alt_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(InputMods_t::Alt));
+}
+
+static void WrenBindForward_InputMods_t_Super_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(InputMods_t::Super));
+}
+
 static void WrenBindForward_Anchor_t_TopLeft_0param(WrenVM* pVM)
 {
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(Anchor_t::TopLeft));
@@ -1857,6 +1930,15 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("IInput", "wasKeyEventPressed(_)", WrenBindForward_IInput_wasKeyEventPressed_1param, true),
 	BIND("IInput", "wasKeyEventReleased(_)", WrenBindForward_IInput_wasKeyEventReleased_1param, true),
 	BIND("IInput", "getKeyEventTime(_)", WrenBindForward_IInput_getKeyEventTime_1param, true),
+	BIND("CInputActions", "bind(_,_,_)", WrenBindForward_CInputActions_bind_3param, true),
+	BIND("CInputActions", "setBinding(_,_,_,_)", WrenBindForward_CInputActions_setBinding_4param, true),
+	BIND("CInputActions", "clearBindings(_)", WrenBindForward_CInputActions_clearBindings_1param, true),
+	BIND("CInputActions", "getBindingCount(_)", WrenBindForward_CInputActions_getBindingCount_1param, true),
+	BIND("CInputActions", "getBindingKey(_,_)", WrenBindForward_CInputActions_getBindingKey_2param, true),
+	BIND("CInputActions", "getBindingMods(_,_)", WrenBindForward_CInputActions_getBindingMods_2param, true),
+	BIND("CInputActions", "isDown(_)", WrenBindForward_CInputActions_isDown_1param, true),
+	BIND("CInputActions", "wasPressed(_)", WrenBindForward_CInputActions_wasPressed_1param, true),
+	BIND("CInputActions", "wasReleased(_)", WrenBindForward_CInputActions_wasReleased_1param, true),
 	BIND("IAudio", "loadSound(_)", WrenBindForward_IAudio_loadSound_1param, true),
 	BIND("IAudio", "unloadSound(_)", WrenBindForward_IAudio_unloadSound_1param, true),
 	BIND("IAudio", "playSound(_)", WrenBindForward_IAudio_playSound_1param, true),
@@ -2036,6 +2118,11 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("CApplication", "quit()", WrenBindForward_CApplication_quit_0param, true),
 	BIND("Platform_t", "PC", WrenBindForward_Platform_t_PC_0param, true),
 	BIND("Platform_t", "PS3", WrenBindForward_Platform_t_PS3_0param, true),
+	BIND("InputMods_t", "None", WrenBindForward_InputMods_t_None_0param, true),
+	BIND("InputMods_t", "Shift", WrenBindForward_InputMods_t_Shift_0param, true),
+	BIND("InputMods_t", "Control", WrenBindForward_InputMods_t_Control_0param, true),
+	BIND("InputMods_t", "Alt", WrenBindForward_InputMods_t_Alt_0param, true),
+	BIND("InputMods_t", "Super", WrenBindForward_InputMods_t_Super_0param, true),
 	BIND("Anchor_t", "TopLeft", WrenBindForward_Anchor_t_TopLeft_0param, true),
 	BIND("Anchor_t", "Top", WrenBindForward_Anchor_t_Top_0param, true),
 	BIND("Anchor_t", "TopRight", WrenBindForward_Anchor_t_TopRight_0param, true),
@@ -2178,6 +2265,17 @@ static void s_Fini_CFreeCamera(void* pData)
 		CFreeCamera* p = static_cast<CFreeCamera*>(HandleToPtr(*pHandle));
 		CWrenBindAllocator<CFreeCamera>::Free(p);
 	}
+}
+
+static void s_Alloc_CInputActions(WrenVM* pVM)
+{
+	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
+}
+
+static void s_Fini_CInputActions(void* pData)
+{
+	Handle_t* pHandle = static_cast<Handle_t*>(pData);
+	(void)pHandle;
 }
 
 static void s_Alloc_CLight(WrenVM* pVM)
@@ -2440,6 +2538,17 @@ static void s_Fini_IRenderer(void* pData)
 	(void)pHandle;
 }
 
+static void s_Alloc_InputMods_t(WrenVM* pVM)
+{
+	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
+}
+
+static void s_Fini_InputMods_t(void* pData)
+{
+	Handle_t* pHandle = static_cast<Handle_t*>(pData);
+	(void)pHandle;
+}
+
 static void s_Alloc_LightType_t(WrenVM* pVM)
 {
 	wrenSetSlotNewForeign(pVM, 0, 0, sizeof(Handle_t));
@@ -2610,6 +2719,13 @@ WrenForeignClassMethods s_GeneratedClassMethods(
 
 		return methods;
 	}
+	if (strcmp(pClassName, "CInputActions") == 0)
+	{
+		methods.allocate = s_Alloc_CInputActions;
+		methods.finalize = s_Fini_CInputActions;
+
+		return methods;
+	}
 	if (strcmp(pClassName, "CLight") == 0)
 	{
 		methods.allocate = s_Alloc_CLight;
@@ -2747,6 +2863,13 @@ WrenForeignClassMethods s_GeneratedClassMethods(
 	{
 		methods.allocate = s_Alloc_IRenderer;
 		methods.finalize = s_Fini_IRenderer;
+
+		return methods;
+	}
+	if (strcmp(pClassName, "InputMods_t") == 0)
+	{
+		methods.allocate = s_Alloc_InputMods_t;
+		methods.finalize = s_Fini_InputMods_t;
 
 		return methods;
 	}

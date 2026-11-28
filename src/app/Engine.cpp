@@ -15,6 +15,7 @@
 #include "ecs/EntityRegistry.h"
 #include "engine/wren/WrenManager.h"
 #include "input/Input.h"
+#include "input/InputActions.h"
 #include "input/InputManager.h"
 #include "renderer/RenderQueue.h"
 #include "renderer/material/Material.h"
@@ -155,6 +156,8 @@ bool CEngine::Init()
 
 	IInput* pInput = m_pInputManager->Get();
 	pInput->SetWindow(pWindow->GetNativeHandle());
+	CInputActions::SetInput(pInput);
+	CDisplay::Init();
 
 	if (!m_pAudioManager.Create())
 	{
@@ -304,6 +307,7 @@ int CEngine::Run()
 		CTime::Update();
 
 		pInput->Update();
+		CDisplay::Update();
 		pAudio->Update();
 
 		m_pRenderer->BeginFrame();
