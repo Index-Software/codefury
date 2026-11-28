@@ -183,7 +183,6 @@ private:
 
 	SoundSlot_t* GetSoundSlot(SoundHandle hSound);
 	const ChannelSlot_t* GetChannelSlot(SoundInstanceHandle hInstance) const;
-	void ProcessCommands();
 	void DecodeSound(SoundSlot_t& slot, uint32 frameCount);
 	void ReleaseSound(SoundSlot_t& slot);
 	bool MixChannel(
@@ -193,6 +192,7 @@ private:
 		float32* pOutput,
 		uint32 frameCount);
 	void StopChannel(uint32 channelIndex);
+	void ProcessCommands();
 
 	CAudioQueue<AudioCommand_t, s_AudioCommandCount> m_Commands;
 	SoundSlot_t m_Sounds[s_AudioMaxSounds];

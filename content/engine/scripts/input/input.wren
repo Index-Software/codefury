@@ -1,10 +1,12 @@
 class IInput {
+  foreign static setMouseCaptured(isCaptured)
+  foreign static getMouseCaptured()
+
   foreign static getLookX()
   foreign static getLookY()
   foreign static getMoveX()
   foreign static getMoveY()
-  foreign static setMouseCaptured(isCaptured)
-  foreign static getMouseCaptured()
+
   foreign static isKeyDown(key)
   foreign static wasKeyPressed(key)
   foreign static wasKeyReleased(key)

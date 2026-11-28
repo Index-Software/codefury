@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef PLATFORM_BINDING_H
-#define PLATFORM_BINDING_H
+#ifndef PLATFORM_H
+#define PLATFORM_H
 
 #pragma once
 
@@ -28,4 +28,4 @@ struct Platform_t
 
 #endif // !WREN_BIND_CODEGEN
 
-#endif // PLATFORM_BINDING_H
+#endif // PLATFORM_H

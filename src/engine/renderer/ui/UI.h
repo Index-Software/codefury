@@ -19,6 +19,7 @@
 
 class CTextRenderer;
 class CMaterial;
+class CMatrix4;
 class CShader;
 
 struct Anchor_t

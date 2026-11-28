@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef CFILE_UTILS_BINDING_H
-#define CFILE_UTILS_BINDING_H
+#ifndef CFILE_UTILS_H
+#define CFILE_UTILS_H
 
 #pragma once
 
@@ -30,4 +30,4 @@ public:
 
 #endif // !WREN_BIND_CODEGEN
 
-#endif // CFILE_UTILS_BINDING_H
+#endif // CFILE_UTILS_H

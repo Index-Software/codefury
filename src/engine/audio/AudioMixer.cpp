@@ -392,47 +392,63 @@ const ChannelSlot_t* CAudioMixer::GetChannelSlot(
 	return &slot;
 }
 
-void CAudioMixer::ProcessCommands()
+void CAudioMixer::DecodeSound(SoundSlot_t& slot, uint32 frameCount)
 {
-	AudioCommand_t command;
-	while (m_Commands.Pop(command))
+	Sound_t& sound = slot.m_Sound;
+	uint32 end = slot.m_DecodedEnd;
+	uint32 last = end + frameCount;
+	if (last > sound.m_FrameCount)
 	{
-		if (command.m_Type == AudioCommandType_t::Play)
-		{
-			MixerChannel_t& channel = m_MixerChannels[command.m_ChannelIndex];
-			channel.m_pSamples = command.m_pSamples;
-			channel.m_Position = uint64(command.m_StartFrame) << 32;
-			channel.m_Step = command.m_Step;
-			channel.m_FrameCount = command.m_FrameCount;
-			channel.m_SoundIndex = command.m_SoundIndex;
-			channel.m_ChannelCount = command.m_ChannelCount;
-			channel.m_IsPlaying = true;
-		}
-		else if (command.m_Type == AudioCommandType_t::Stop)
-		{
-			if (m_MixerChannels[command.m_ChannelIndex].m_IsPlaying)
-			{
-				StopChannel(command.m_ChannelIndex);
-			}
-		}
-		else
-		{
-			for (uint32 i = 0; i < s_AudioMaxChannels; ++i)
-			{
-				MixerChannel_t& channel = m_MixerChannels[i];
-				if (channel.m_IsPlaying
-					&& channel.m_SoundIndex == command.m_SoundIndex)
-				{
-					StopChannel(i);
-				}
-			}
-
-			AudioEvent_t event;
-			event.m_Index = command.m_SoundIndex;
-			event.m_Type = AudioEventType_t::SoundReleased;
-			m_Events.Push(event);
-		}
+		last = sound.m_FrameCount;
 	}
+
+	while (end < last)
+	{
+		const uint32 count = last - end < s_AudioDecodeChunk
+			? last - end
+			: s_AudioDecodeChunk;
+		const uint32 decoded = DecodeVorbis(slot.m_pDecoder, sound, end, count);
+		if (decoded == 0)
+		{
+			const uint32 remaining = sound.m_FrameCount - end;
+			memset(
+				sound.m_pSamples + end * sound.m_ChannelCount,
+				0,
+				remaining * sound.m_ChannelCount * sizeof(int16));
+			end = sound.m_FrameCount;
+
+			break;
+		}
+
+		end += decoded;
+	}
+
+	__sync_synchronize();
+	slot.m_DecodedEnd = end;
+
+	if (end == sound.m_FrameCount && slot.m_DecodeStart == 0)
+	{
+		CloseVorbis(slot.m_pDecoder);
+		slot.m_pDecoder = CF_NULL;
+		CUtlMemory::Free(slot.m_pData);
+		slot.m_pData = CF_NULL;
+	}
+}
+
+void CAudioMixer::ReleaseSound(SoundSlot_t& slot)
+{
+	if (slot.m_pDecoder)
+	{
+		CloseVorbis(slot.m_pDecoder);
+		slot.m_pDecoder = CF_NULL;
+	}
+
+	CUtlMemory::Free(slot.m_pData);
+	slot.m_pData = CF_NULL;
+	CUtlMemory::Free(slot.m_Sound.m_pSamples);
+	slot.m_Sound = Sound_t();
+	slot.m_DecodeStart = 0;
+	slot.m_DecodedEnd = 0;
 }
 
 bool CAudioMixer::MixChannel(
@@ -499,64 +515,6 @@ bool CAudioMixer::MixChannel(
 	return true;
 }
 
-void CAudioMixer::DecodeSound(SoundSlot_t& slot, uint32 frameCount)
-{
-	Sound_t& sound = slot.m_Sound;
-	uint32 end = slot.m_DecodedEnd;
-	uint32 last = end + frameCount;
-	if (last > sound.m_FrameCount)
-	{
-		last = sound.m_FrameCount;
-	}
-
-	while (end < last)
-	{
-		const uint32 count = last - end < s_AudioDecodeChunk
-			? last - end
-			: s_AudioDecodeChunk;
-		const uint32 decoded = DecodeVorbis(slot.m_pDecoder, sound, end, count);
-		if (decoded == 0)
-		{
-			memset(
-				sound.m_pSamples + end * sound.m_ChannelCount,
-				0,
-				(sound.m_FrameCount - end) * sound.m_ChannelCount * sizeof(int16));
-			end = sound.m_FrameCount;
-
-			break;
-		}
-
-		end += decoded;
-	}
-
-	__sync_synchronize();
-	slot.m_DecodedEnd = end;
-
-	if (end == sound.m_FrameCount && slot.m_DecodeStart == 0)
-	{
-		CloseVorbis(slot.m_pDecoder);
-		slot.m_pDecoder = CF_NULL;
-		CUtlMemory::Free(slot.m_pData);
-		slot.m_pData = CF_NULL;
-	}
-}
-
-void CAudioMixer::ReleaseSound(SoundSlot_t& slot)
-{
-	if (slot.m_pDecoder)
-	{
-		CloseVorbis(slot.m_pDecoder);
-		slot.m_pDecoder = CF_NULL;
-	}
-
-	CUtlMemory::Free(slot.m_pData);
-	slot.m_pData = CF_NULL;
-	CUtlMemory::Free(slot.m_Sound.m_pSamples);
-	slot.m_Sound = Sound_t();
-	slot.m_DecodeStart = 0;
-	slot.m_DecodedEnd = 0;
-}
-
 void CAudioMixer::StopChannel(uint32 channelIndex)
 {
 	m_MixerChannels[channelIndex].m_IsPlaying = false;
@@ -565,4 +523,47 @@ void CAudioMixer::StopChannel(uint32 channelIndex)
 	event.m_Index = channelIndex;
 	event.m_Type = AudioEventType_t::ChannelFinished;
 	m_Events.Push(event);
+}
+
+void CAudioMixer::ProcessCommands()
+{
+	AudioCommand_t command;
+	while (m_Commands.Pop(command))
+	{
+		if (command.m_Type == AudioCommandType_t::Play)
+		{
+			MixerChannel_t& channel = m_MixerChannels[command.m_ChannelIndex];
+			channel.m_pSamples = command.m_pSamples;
+			channel.m_Position = uint64(command.m_StartFrame) << 32;
+			channel.m_Step = command.m_Step;
+			channel.m_FrameCount = command.m_FrameCount;
+			channel.m_SoundIndex = command.m_SoundIndex;
+			channel.m_ChannelCount = command.m_ChannelCount;
+			channel.m_IsPlaying = true;
+		}
+		else if (command.m_Type == AudioCommandType_t::Stop)
+		{
+			if (m_MixerChannels[command.m_ChannelIndex].m_IsPlaying)
+			{
+				StopChannel(command.m_ChannelIndex);
+			}
+		}
+		else
+		{
+			for (uint32 i = 0; i < s_AudioMaxChannels; ++i)
+			{
+				MixerChannel_t& channel = m_MixerChannels[i];
+				if (channel.m_IsPlaying
+					&& channel.m_SoundIndex == command.m_SoundIndex)
+				{
+					StopChannel(i);
+				}
+			}
+
+			AudioEvent_t event;
+			event.m_Index = command.m_SoundIndex;
+			event.m_Type = AudioEventType_t::SoundReleased;
+			m_Events.Push(event);
+		}
+	}
 }

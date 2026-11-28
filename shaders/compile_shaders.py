@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import os
 from pathlib import Path
 import shutil
@@ -7,8 +8,11 @@ import sys
 
 
 class CompileShaders:
-    def __init__(self, project_root: str) -> None:
+    def __init__(self, project_root: str, extra_dirs: list[str]) -> None:
         self._project_root: Path = Path(project_root).resolve()
+        self._extra_dirs: list[Path] = [
+            Path(directory).resolve() for directory in extra_dirs
+        ]
         self._shaders_dir: Path = self._project_root / "shaders"
         self._shaders_cg_dir: Path = self._project_root / "build" / "shaders" / "cg"
         self._shaders_glsl_dir: Path = self._project_root / "build" / "shaders" / "glsl"
@@ -45,8 +49,17 @@ class CompileShaders:
 
         self._shaders_glsl_dir.mkdir(parents=True, exist_ok=True)
 
-        for slang_file in sorted(slang_dir.rglob("*.slang")):
-            rel_path: Path = slang_file.relative_to(slang_dir)
+        slang_sources: list[tuple[Path, Path]] = [
+            (slang_file, slang_dir) for slang_file in sorted(slang_dir.rglob("*.slang"))
+        ]
+        for extra_dir in self._extra_dirs:
+            slang_sources += [
+                (slang_file, extra_dir / "slang")
+                for slang_file in sorted((extra_dir / "slang").rglob("*.slang"))
+            ]
+
+        for slang_file, source_dir in slang_sources:
+            rel_path: Path = slang_file.relative_to(source_dir)
             base_rel: Path = rel_path.with_suffix("")
             name: str = slang_file.name
 
@@ -71,6 +84,8 @@ class CompileShaders:
                     stage,
                     "-target",
                     "glsl",
+                    "-I",
+                    str(slang_dir),
                     "-matrix-layout-column-major",
                     "-o",
                     str(out_path),
@@ -120,27 +135,29 @@ class CompileShaders:
 
             return False
 
-        cg_dir: Path = self._shaders_dir / "cg"
+        cg_dirs: list[Path] = [self._shaders_dir / "cg"]
+        cg_dirs += [extra_dir / "cg" for extra_dir in self._extra_dirs]
         shader_pairs: dict[str, dict[str, Path | None]] = {}
 
-        for vcg_file in cg_dir.rglob("*.vcg"):
-            if not vcg_file.is_file():
-                continue
+        for cg_dir in cg_dirs:
+            for vcg_file in cg_dir.rglob("*.vcg"):
+                if not vcg_file.is_file():
+                    continue
 
-            rel_path: Path = vcg_file.relative_to(cg_dir)
-            base_rel: str = str(rel_path.with_suffix(""))
-            shader_pairs[base_rel] = {"vcg": vcg_file, "fcg": None}
+                rel_path: Path = vcg_file.relative_to(cg_dir)
+                base_rel: str = str(rel_path.with_suffix(""))
+                shader_pairs[base_rel] = {"vcg": vcg_file, "fcg": None}
 
-        for fcg_file in cg_dir.rglob("*.fcg"):
-            if not fcg_file.is_file():
-                continue
+            for fcg_file in cg_dir.rglob("*.fcg"):
+                if not fcg_file.is_file():
+                    continue
 
-            rel_path: Path = fcg_file.relative_to(cg_dir)
-            base_rel: str = str(rel_path.with_suffix(""))
-            if base_rel in shader_pairs:
-                shader_pairs[base_rel]["fcg"] = fcg_file
-            else:
-                shader_pairs[base_rel] = {"vcg": None, "fcg": fcg_file}
+                rel_path: Path = fcg_file.relative_to(cg_dir)
+                base_rel: str = str(rel_path.with_suffix(""))
+                if base_rel in shader_pairs:
+                    shader_pairs[base_rel]["fcg"] = fcg_file
+                else:
+                    shader_pairs[base_rel] = {"vcg": None, "fcg": fcg_file}
 
         for shader_name, files in shader_pairs.items():
             vcg_file: Path | None = files["vcg"]
@@ -222,8 +239,12 @@ class CompileShaders:
 
 
 def main() -> int:
+    parser: argparse.ArgumentParser = argparse.ArgumentParser()
+    parser.add_argument("--shaders", action="append", default=[])
+    args: argparse.Namespace = parser.parse_args()
+
     project_root: str = str(Path(__file__).parent.parent.resolve())
-    compile_shaders: CompileShaders = CompileShaders(project_root)
+    compile_shaders: CompileShaders = CompileShaders(project_root, args.shaders)
 
     return 0 if compile_shaders.run() else 1
 

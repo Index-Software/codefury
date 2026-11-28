@@ -12,6 +12,9 @@
 #include <GLFW/glfw3.h>
 #endif // !PLATFORM_PS3
 
+static const float64 s_FrameWaitThreshold = 0.002;
+static const float64 s_FrameWaitMargin = 0.001;
+
 #ifndef PLATFORM_PS3
 static int32 s_WindowedRect[4] = { 0 };
 #endif // !PLATFORM_PS3
@@ -120,9 +123,10 @@ void CDisplay::WaitForFrame()
 
 	while (now < s_FrameDeadline)
 	{
-		if (s_FrameDeadline - now > 0.002)
+		if (s_FrameDeadline - now > s_FrameWaitThreshold)
 		{
-			glfwWaitEventsTimeout(s_FrameDeadline - now - 0.001);
+			glfwWaitEventsTimeout(
+				s_FrameDeadline - now - s_FrameWaitMargin);
 		}
 
 		now = CTime::GetTimeSinceStartup();

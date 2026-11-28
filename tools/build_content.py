@@ -14,10 +14,17 @@ SHADER_SOURCE_SUFFIXES = (".slang", ".slangh", ".cginc", ".vcg", ".fcg", ".h", "
 
 
 class BuildContent:
-    def __init__(self, project_root: Path, platform: str, output_dir: Path) -> None:
+    def __init__(
+        self,
+        project_root: Path,
+        platform: str,
+        output_dir: Path,
+        extra_shader_dirs: list[Path],
+    ) -> None:
         self._project_root: Path = project_root
         self._platform: str = platform
         self._output_dir: Path = output_dir
+        self._extra_shader_dirs: list[Path] = extra_shader_dirs
         self._build_dir: Path = project_root / "build"
 
     def _compile_shaders(self) -> bool:
@@ -25,7 +32,8 @@ class BuildContent:
         stamp = self._build_dir / "shaders" / "shaders.stamp"
         sources = [
             path
-            for path in shaders_dir.rglob("*")
+            for directory in [shaders_dir, *self._extra_shader_dirs]
+            for path in directory.rglob("*")
             if path.suffix in SHADER_SOURCE_SUFFIXES
         ]
 
@@ -34,6 +42,9 @@ class BuildContent:
 
         print("Compiling shaders...", flush=True)
         command = [sys.executable, str(shaders_dir / "compile_shaders.py")]
+        for directory in self._extra_shader_dirs:
+            command += ["--shaders", str(directory)]
+
         result = subprocess.run(command, cwd=self._project_root)
         if result.returncode != 0:
             print("[ERROR] Shader compilation failed")
@@ -108,11 +119,17 @@ def main() -> int:
         required=True,
     )
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--shaders", type=Path, action="append", default=[])
     args = parser.parse_args()
 
     default_output_dir = project_root / "build" / PLATFORM_OUTPUT_DIRS[args.platform]
     output_dir = args.output or default_output_dir
-    build_content = BuildContent(project_root, args.platform, output_dir.resolve())
+    build_content = BuildContent(
+        project_root,
+        args.platform,
+        output_dir.resolve(),
+        [directory.resolve() for directory in args.shaders],
+    )
 
     return 0 if build_content.run() else 1
 
