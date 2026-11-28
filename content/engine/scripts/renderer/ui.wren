@@ -14,6 +14,9 @@ class CUI {
   foreign static getViewportWidth()
   foreign static getViewportHeight()
 
+  foreign static setReferenceResolution(width, height)
+  foreign static clearReferenceResolution()
+
   foreign static setDrawColor(color)
   foreign static getDrawColor()
   foreign static setMaterial(material)

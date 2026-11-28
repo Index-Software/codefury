@@ -123,6 +123,18 @@ static void WrenBindForward_CUI_getViewportHeight_0param(WrenVM* pVM)
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<CUI>::s_pInstance->GetViewportHeight()));
 }
 
+static void WrenBindForward_CUI_setReferenceResolution_2param(WrenVM* pVM)
+{
+	(void)pVM;
+	CWrenBindSingleton<CUI>::s_pInstance->SetReferenceResolution(static_cast<float32>(wrenGetSlotDouble(pVM, 1)), static_cast<float32>(wrenGetSlotDouble(pVM, 2)));
+}
+
+static void WrenBindForward_CUI_clearReferenceResolution_0param(WrenVM* pVM)
+{
+	(void)pVM;
+	CWrenBindSingleton<CUI>::s_pInstance->ClearReferenceResolution();
+}
+
 static void WrenBindForward_CUI_setDrawColor_1param(WrenVM* pVM)
 {
 	(void)pVM;
@@ -1727,6 +1739,8 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("CTexture", "getData", WrenBindForward_CTexture_getData_0param, false),
 	BIND("CUI", "getViewportWidth()", WrenBindForward_CUI_getViewportWidth_0param, true),
 	BIND("CUI", "getViewportHeight()", WrenBindForward_CUI_getViewportHeight_0param, true),
+	BIND("CUI", "setReferenceResolution(_,_)", WrenBindForward_CUI_setReferenceResolution_2param, true),
+	BIND("CUI", "clearReferenceResolution()", WrenBindForward_CUI_clearReferenceResolution_0param, true),
 	BIND("CUI", "setDrawColor(_)", WrenBindForward_CUI_setDrawColor_1param, true),
 	BIND("CUI", "getDrawColor()", WrenBindForward_CUI_getDrawColor_0param, true),
 	BIND("CUI", "setMaterial(_)", WrenBindForward_CUI_setMaterial_1param, true),

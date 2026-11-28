@@ -59,6 +59,13 @@ public:
 	uint32 GetViewportHeight() const
 		WREN_BIND_SINGLETON("getViewportHeight()", s_pGUI);
 
+	void SetReferenceResolution(
+		float32 width,
+		float32 height)
+		WREN_BIND_SINGLETON("setReferenceResolution(_,_)", s_pGUI);
+	void ClearReferenceResolution()
+		WREN_BIND_SINGLETON("clearReferenceResolution()", s_pGUI);
+
 	void SetDrawColor(const CColor& color)
 		WREN_BIND_SINGLETON("setDrawColor(_)", s_pGUI);
 	CColor GetDrawColor() const WREN_BIND_SINGLETON("getDrawColor()", s_pGUI);
@@ -147,12 +154,20 @@ private:
 		Anchor_t::Enum anchor,
 		float32 x,
 		float32 y) const;
+	void BeginBatch(const CMatrix4& projection);
 
 	CUIBatch m_Batch;
 	IRenderer* m_pRenderer;
 	CTextRenderer* m_pTextRenderer;
 	CRef<CMaterial> m_pDefaultMaterial;
 	CRef<CShader> m_pUnlitShader;
+	float32 m_ReferenceWidth;
+	float32 m_ReferenceHeight;
+	float32 m_Width;
+	float32 m_Height;
+	float32 m_Scale;
+	float32 m_OffsetX;
+	float32 m_OffsetY;
 };
 
 #endif // UI_H

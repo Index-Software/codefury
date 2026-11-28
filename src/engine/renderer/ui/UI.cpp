@@ -34,7 +34,14 @@ static CConfigVar s_rTextSoftness(
 
 CUI::CUI() :
 	m_pRenderer(CF_NULL),
-	m_pTextRenderer(CF_NULL)
+	m_pTextRenderer(CF_NULL),
+	m_ReferenceWidth(0.0f),
+	m_ReferenceHeight(0.0f),
+	m_Width(0.0f),
+	m_Height(0.0f),
+	m_Scale(1.0f),
+	m_OffsetX(0.0f),
+	m_OffsetY(0.0f)
 {
 }
 
@@ -116,21 +123,46 @@ void CUI::Shutdown()
 
 Rect_t CUI::GetViewport() const
 {
-	return Rect_t(
-		0,
-		0,
-		m_Batch.GetViewportWidth(),
-		m_Batch.GetViewportHeight());
+	return Rect_t(0, 0, GetViewportWidth(), GetViewportHeight());
 }
 
 uint32 CUI::GetViewportWidth() const
 {
+	if (m_ReferenceWidth > 0.0f)
+	{
+		return uint32(m_ReferenceWidth);
+	}
+
 	return m_Batch.GetViewportWidth();
 }
 
 uint32 CUI::GetViewportHeight() const
 {
+	if (m_ReferenceHeight > 0.0f)
+	{
+		return uint32(m_ReferenceHeight);
+	}
+
 	return m_Batch.GetViewportHeight();
+}
+
+void CUI::SetReferenceResolution(float32 width, float32 height)
+{
+	if (width <= 0.0f || height <= 0.0f)
+	{
+		ClearReferenceResolution();
+
+		return;
+	}
+
+	m_ReferenceWidth = width;
+	m_ReferenceHeight = height;
+}
+
+void CUI::ClearReferenceResolution()
+{
+	m_ReferenceWidth = 0.0f;
+	m_ReferenceHeight = 0.0f;
 }
 
 void CUI::SetDrawColor(const CColor& color)
@@ -150,7 +182,11 @@ void CUI::SetMaterial(CMaterial* pMaterial)
 
 void CUI::SetClipRect(int32 x0, int32 y0, int32 x1, int32 y1)
 {
-	m_Batch.SetClipRect(x0, y0, x1, y1);
+	m_Batch.SetClipRect(
+		int32(m_OffsetX + float32(x0) * m_Scale),
+		int32(m_OffsetY + float32(y0) * m_Scale),
+		int32(m_OffsetX + float32(x1) * m_Scale),
+		int32(m_OffsetY + float32(y1) * m_Scale));
 }
 
 void CUI::ResetClipRect()
@@ -351,7 +387,7 @@ void CUI::DrawText(const char* pText, float32 x, float32 y)
 			m_Batch.GetDrawColor(),
 			CColor::Black,
 			0.0f,
-			m_pTextRenderer->GetTextSoftness());
+			m_pTextRenderer->GetTextSoftness() / m_Scale);
 	}
 }
 
@@ -372,7 +408,7 @@ void CUI::DrawTextOutline(
 			m_Batch.GetDrawColor(),
 			outlineColor,
 			outlineWidth,
-			m_pTextRenderer->GetTextSoftness());
+			m_pTextRenderer->GetTextSoftness() / m_Scale);
 	}
 }
 
@@ -423,21 +459,37 @@ void CUI::BeginDraw()
 	}
 
 	Viewport_t viewport = m_pRenderer->GetViewport();
-	CMatrix4 projection = CMaths::Orthographic(
-		0.0f,
-		float32(viewport.m_Width),
-		0.0f,
-		float32(viewport.m_Height),
-		-1.0f,
-		1.0f);
+	float32 viewportWidth = float32(viewport.m_Width);
+	float32 viewportHeight = float32(viewport.m_Height);
 
-	m_Batch.BeginFrame(projection);
-
-	if (m_pTextRenderer)
+	if (m_ReferenceWidth > 0.0f && m_ReferenceHeight > 0.0f)
 	{
-		m_pTextRenderer->ResetFont();
-		m_pTextRenderer->BeginTextBatch(projection);
+		m_Width = m_ReferenceWidth;
+		m_Height = m_ReferenceHeight;
+		m_Scale = CMaths::Min(
+			viewportWidth / m_Width,
+			viewportHeight / m_Height);
+		m_OffsetX = (viewportWidth - m_Width * m_Scale) * 0.5f;
+		m_OffsetY = (viewportHeight - m_Height * m_Scale) * 0.5f;
 	}
+	else
+	{
+		m_Width = viewportWidth;
+		m_Height = viewportHeight;
+		m_Scale = 1.0f;
+		m_OffsetX = 0.0f;
+		m_OffsetY = 0.0f;
+	}
+
+	float32 marginX = m_OffsetX / m_Scale;
+	float32 marginY = m_OffsetY / m_Scale;
+	BeginBatch(CMaths::Orthographic(
+		-marginX,
+		m_Width + marginX,
+		-marginY,
+		m_Height + marginY,
+		-1.0f,
+		1.0f));
 }
 
 void CUI::EndDraw()
@@ -473,8 +525,8 @@ AnchoredPosition_t CUI::GetAnchoredPosition(
 			m_pTextRenderer->GetTextLineHeight();
 	}
 
-	float32 width = float32(m_Batch.GetViewportWidth());
-	float32 height = float32(m_Batch.GetViewportHeight());
+	float32 width = m_Width;
+	float32 height = m_Height;
 
 	float32 leftX = x;
 	float32 centerX = width * 0.5f + x - textWidth * 0.5f;
@@ -541,4 +593,15 @@ AnchoredPosition_t CUI::GetAnchoredPosition(
 	}
 
 	return position;
+}
+
+void CUI::BeginBatch(const CMatrix4& projection)
+{
+	m_Batch.BeginFrame(projection);
+
+	if (m_pTextRenderer)
+	{
+		m_pTextRenderer->ResetFont();
+		m_pTextRenderer->BeginTextBatch(projection);
+	}
 }
