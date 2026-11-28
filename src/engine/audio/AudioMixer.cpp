@@ -185,13 +185,20 @@ SoundInstanceHandle CAudioMixer::PlaySound(SoundHandle hSound, float64 seconds)
 	if (pSlot->m_pDecoder && (startFrame < pSlot->m_DecodeStart
 		|| startFrame > pSlot->m_DecodedEnd))
 	{
-		SeekVorbis(pSlot->m_pDecoder, startFrame);
+		if (!SeekVorbis(pSlot->m_pDecoder, startFrame))
+		{
+			Warning("[CAudioMixer] Vorbis seek failed, starting from the beginning\n");
+			SeekVorbis(pSlot->m_pDecoder, 0);
+			startFrame = 0;
+		}
+
 		pSlot->m_DecodeStart = startFrame;
 		pSlot->m_DecodedEnd = startFrame;
 	}
 
 	if (pSlot->m_pDecoder)
 	{
+		pSlot->m_ZeroDecodes = 0;
 		DecodeSound(*pSlot, sound.m_SampleRate / 2);
 	}
 
@@ -412,6 +419,13 @@ void CAudioMixer::DecodeSound(SoundSlot_t& slot, uint32 frameCount)
 		const uint32 decoded = DecodeVorbis(slot.m_pDecoder, sound, end, count);
 		if (decoded == 0)
 		{
+			if (slot.m_ZeroDecodes < 4)
+			{
+				slot.m_ZeroDecodes++;
+
+				break;
+			}
+
 			const uint32 remaining = sound.m_FrameCount - end;
 			memset(
 				sound.m_pSamples + end * sound.m_ChannelCount,
@@ -422,6 +436,7 @@ void CAudioMixer::DecodeSound(SoundSlot_t& slot, uint32 frameCount)
 			break;
 		}
 
+		slot.m_ZeroDecodes = 0;
 		end += decoded;
 	}
 

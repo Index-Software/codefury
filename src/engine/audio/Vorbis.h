@@ -22,7 +22,7 @@ uint32 DecodeVorbis(
 	Sound_t& sound,
 	uint32 firstFrame,
 	uint32 frameCount);
-void SeekVorbis(stb_vorbis* pVorbis, uint32 frame);
+bool SeekVorbis(stb_vorbis* pVorbis, uint32 frame);
 void CloseVorbis(stb_vorbis* pVorbis);
 
 #endif // VORBIS_H

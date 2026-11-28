@@ -80,9 +80,16 @@ uint32 DecodeVorbis(
 	return decodedFrames > 0 ? uint32(decodedFrames) : 0;
 }
 
-void SeekVorbis(stb_vorbis* pVorbis, uint32 frame)
+bool SeekVorbis(stb_vorbis* pVorbis, uint32 frame)
 {
-	stb_vorbis_seek(pVorbis, frame);
+	if (frame == 0)
+	{
+		stb_vorbis_seek_start(pVorbis);
+
+		return true;
+	}
+
+	return stb_vorbis_seek(pVorbis, frame) != 0;
 }
 
 void CloseVorbis(stb_vorbis* pVorbis)

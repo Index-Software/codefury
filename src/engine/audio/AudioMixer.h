@@ -127,6 +127,7 @@ struct SoundSlot_t
 	volatile uint32 m_DecodedEnd;
 	uint16 m_Generation;
 	uint8 m_State;
+	uint8 m_ZeroDecodes;
 
 	SoundSlot_t() :
 		m_pDecoder(CF_NULL),
@@ -134,7 +135,8 @@ struct SoundSlot_t
 		m_DecodeStart(0),
 		m_DecodedEnd(0),
 		m_Generation(0),
-		m_State(SoundState_t::Free)
+		m_State(SoundState_t::Free),
+		m_ZeroDecodes(0)
 	{
 	}
 };
