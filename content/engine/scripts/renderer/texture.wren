@@ -20,6 +20,10 @@ foreign class CTexture {
 
   foreign getMipmapEnabled
 
+  foreign setAnisoLevel(anisoLevel)
+
+  foreign getAnisoLevel
+
   foreign getHandle
 
   foreign getWidth

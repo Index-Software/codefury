@@ -21,6 +21,7 @@ CTexture::CTexture(IRenderer* pRenderer)
 	, m_hTexture(0)
 	, m_Width(0)
 	, m_Height(0)
+	, m_AnisoLevel(1)
 	, m_WrapMode(TextureWrapMode_t::Repeat)
 	, m_IsMipmapEnabled(false)
 {
@@ -87,6 +88,8 @@ bool CTexture::LoadFromFile(const char* pFilename)
 		return false;
 	}
 
+	m_pRenderer->SetTextureAnisoLevel(m_hTexture, m_AnisoLevel);
+
 	return true;
 }
 
@@ -115,6 +118,8 @@ bool CTexture::CreateFromMemory(
 
 		return false;
 	}
+
+	m_pRenderer->SetTextureAnisoLevel(m_hTexture, m_AnisoLevel);
 
 	return true;
 }
@@ -153,6 +158,8 @@ bool CTexture::CreateFromCubeMemory(
 
 		return false;
 	}
+
+	m_pRenderer->SetTextureAnisoLevel(m_hTexture, m_AnisoLevel);
 
 	m_CubeFaces = faces;
 
@@ -197,6 +204,8 @@ bool CTexture::CreateFromCubeMipMemory(
 
 		return false;
 	}
+
+	m_pRenderer->SetTextureAnisoLevel(m_hTexture, m_AnisoLevel);
 
 	return true;
 }
@@ -245,4 +254,13 @@ bool CTexture::CreateCubemapFromEquirect(const char* pFilename, int32 faceSize)
 void CTexture::Bind(uint32 slot) const
 {
 	m_pRenderer->SetTexture(m_hTexture, slot, ShaderStageFragment, m_WrapMode);
+}
+
+void CTexture::SetAnisoLevel(uint32 anisoLevel)
+{
+	m_AnisoLevel = anisoLevel > 0 ? anisoLevel : 1;
+	if (m_hTexture != 0)
+	{
+		m_pRenderer->SetTextureAnisoLevel(m_hTexture, m_AnisoLevel);
+	}
 }

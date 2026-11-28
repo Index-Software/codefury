@@ -61,6 +61,13 @@ public:
 		return m_IsMipmapEnabled;
 	}
 
+	void SetAnisoLevel(uint32 anisoLevel) WREN_BIND("setAnisoLevel(_)");
+
+	uint32 GetAnisoLevel() const WREN_BIND("getAnisoLevel")
+	{
+		return m_AnisoLevel;
+	}
+
 	TextureHandle GetHandle() const WREN_BIND("getHandle")
 	{
 		return m_hTexture;
@@ -98,6 +105,7 @@ private:
 	TextureHandle m_hTexture;
 	uint32 m_Width;
 	uint32 m_Height;
+	uint32 m_AnisoLevel;
 	TextureWrapMode_t::Enum m_WrapMode;
 	bool m_IsMipmapEnabled;
 };
