@@ -17,9 +17,6 @@
 typedef uint32 SoundHandle;
 typedef uint32 SoundInstanceHandle;
 
-static const SoundHandle s_InvalidSoundHandle = 0;
-static const SoundInstanceHandle s_InvalidSoundInstanceHandle = 0;
-
 class IAudio : public CWrenBindSingleton<IAudio>
 {
 	WREN_SINGLETON_DECL()

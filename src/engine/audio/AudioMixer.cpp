@@ -14,10 +14,12 @@
 #include "dbg.h"
 #include <string.h>
 
+static const SoundHandle s_InvalidSoundHandle = 0;
+static const SoundInstanceHandle s_InvalidSoundInstanceHandle = 0;
+
 STATIC_ASSERT(
 	s_AudioEventCount >= s_AudioMaxChannels + s_AudioMaxSounds);
 
-// Generation in the high 16 bits, index + 1 in the low 16 so 0 stays invalid
 static uint32 MakeHandle(uint32 index, uint16 generation)
 {
 	return (uint32(generation) << 16) | (index + 1);
