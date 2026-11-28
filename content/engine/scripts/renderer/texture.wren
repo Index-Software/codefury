@@ -16,6 +16,10 @@ foreign class CTexture {
 
   foreign getWrapMode
 
+  foreign setMipmapEnabled(isEnabled)
+
+  foreign getMipmapEnabled
+
   foreign getHandle
 
   foreign getWidth

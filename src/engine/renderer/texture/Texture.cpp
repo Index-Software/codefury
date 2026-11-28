@@ -22,6 +22,7 @@ CTexture::CTexture(IRenderer* pRenderer)
 	, m_Width(0)
 	, m_Height(0)
 	, m_WrapMode(TextureWrapMode_t::Repeat)
+	, m_IsMipmapEnabled(false)
 {
 }
 
@@ -76,7 +77,8 @@ bool CTexture::LoadFromFile(const char* pFilename)
 		m_Width,
 		m_Height,
 		TextureFormat_t::RGBA8,
-		m_Data.Base());
+		m_Data.Base(),
+		m_IsMipmapEnabled);
 
 	if (m_hTexture == 0)
 	{
@@ -105,7 +107,8 @@ bool CTexture::CreateFromMemory(
 		m_Width,
 		m_Height,
 		TextureFormat_t::RGBA8,
-		m_Data.Base());
+		m_Data.Base(),
+		m_IsMipmapEnabled);
 	if (m_hTexture == 0)
 	{
 		Error("[CTexture] Failed to create texture from memory\n");

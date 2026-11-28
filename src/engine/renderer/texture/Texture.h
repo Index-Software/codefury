@@ -51,6 +51,16 @@ public:
 		return m_WrapMode;
 	}
 
+	void SetMipmapEnabled(bool isEnabled) WREN_BIND("setMipmapEnabled(_)")
+	{
+		m_IsMipmapEnabled = isEnabled;
+	}
+
+	bool GetMipmapEnabled() const WREN_BIND("getMipmapEnabled")
+	{
+		return m_IsMipmapEnabled;
+	}
+
 	TextureHandle GetHandle() const WREN_BIND("getHandle")
 	{
 		return m_hTexture;
@@ -89,6 +99,7 @@ private:
 	uint32 m_Width;
 	uint32 m_Height;
 	TextureWrapMode_t::Enum m_WrapMode;
+	bool m_IsMipmapEnabled;
 };
 
 #endif // TEXTURE_H

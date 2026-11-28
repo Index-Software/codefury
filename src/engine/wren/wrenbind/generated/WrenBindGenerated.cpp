@@ -95,6 +95,17 @@ static void WrenBindForward_CTexture_getWrapMode_0param(WrenVM* pVM)
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(static_cast<CTexture*>(HandleToPtr(GetForeign(pVM, 0)))->GetWrapMode()));
 }
 
+static void WrenBindForward_CTexture_setMipmapEnabled_1param(WrenVM* pVM)
+{
+	(void)pVM;
+	static_cast<CTexture*>(HandleToPtr(GetForeign(pVM, 0)))->SetMipmapEnabled(wrenGetSlotBool(pVM, 1));
+}
+
+static void WrenBindForward_CTexture_getMipmapEnabled_0param(WrenVM* pVM)
+{
+	wrenSetSlotBool(pVM, 0, static_cast<CTexture*>(HandleToPtr(GetForeign(pVM, 0)))->GetMipmapEnabled());
+}
+
 static void WrenBindForward_CTexture_getHandle_0param(WrenVM* pVM)
 {
 	CWrenBindArg<TextureHandle>::Set(pVM, static_cast<CTexture*>(HandleToPtr(GetForeign(pVM, 0)))->GetHandle());
@@ -1826,6 +1837,8 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("CTexture", "createCubemapFromEquirect(_,_)", WrenBindForward_CTexture_createCubemapFromEquirect_2param, false),
 	BIND("CTexture", "setWrapMode(_)", WrenBindForward_CTexture_setWrapMode_1param, false),
 	BIND("CTexture", "getWrapMode", WrenBindForward_CTexture_getWrapMode_0param, false),
+	BIND("CTexture", "setMipmapEnabled(_)", WrenBindForward_CTexture_setMipmapEnabled_1param, false),
+	BIND("CTexture", "getMipmapEnabled", WrenBindForward_CTexture_getMipmapEnabled_0param, false),
 	BIND("CTexture", "getHandle", WrenBindForward_CTexture_getHandle_0param, false),
 	BIND("CTexture", "getWidth", WrenBindForward_CTexture_getWidth_0param, false),
 	BIND("CTexture", "getHeight", WrenBindForward_CTexture_getHeight_0param, false),
