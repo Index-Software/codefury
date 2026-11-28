@@ -112,7 +112,7 @@ bool CEngine::Init()
 	}
 
 	IWindow* pWindow = m_pWindowManager->GetWindow();
-	CDisplay::SetNativeWindow(pWindow->GetNativeHandle());
+	CDisplay::SetWindow(pWindow);
 
 	m_pRenderer = CreateRenderer();
 	if (!m_pRenderer)

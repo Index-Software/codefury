@@ -14,6 +14,8 @@
 #include "platform.h"
 #include "WrenBind.h"
 
+class IWindow;
+
 class CDisplay
 {
 public:
@@ -22,7 +24,7 @@ public:
 	static void SetFullscreen(
 		bool isFullscreen) WREN_BIND_STATIC("setFullscreen(_)");
 	static bool IsFullscreen() WREN_BIND_STATIC("isFullscreen()");
-	static void SetNativeWindow(void* pWindow);
+	static void SetWindow(IWindow* pWindow);
 	static void WaitForFrame();
 	static void CloseWindow();
 };

@@ -8,30 +8,21 @@
 
 #include "display/CDisplay.h"
 #include "utils/Time.h"
-#ifndef PLATFORM_PS3
-#include <GLFW/glfw3.h>
-#endif // !PLATFORM_PS3
+#include "window/Window.h"
 
 static const float64 s_FrameWaitThreshold = 0.002;
 static const float64 s_FrameWaitMargin = 0.001;
 
-#ifndef PLATFORM_PS3
-static int32 s_WindowedRect[4] = { 0 };
-#endif // !PLATFORM_PS3
-static void* s_pNativeWindow = CF_NULL;
+static IWindow* s_pWindow = CF_NULL;
 static float64 s_FrameDeadline = 0.0;
 static int32 s_FrameLimit = 0;
-static bool s_IsVSync = true;
 
 void CDisplay::SetVSync(bool isEnabled)
 {
-	s_IsVSync = isEnabled;
-#ifndef PLATFORM_PS3
-	if (s_pNativeWindow)
+	if (s_pWindow)
 	{
-		glfwSwapInterval(isEnabled ? 1 : 0);
+		s_pWindow->SetVSync(isEnabled);
 	}
-#endif // !PLATFORM_PS3
 }
 
 void CDisplay::SetFrameLimit(int32 fps)
@@ -41,71 +32,24 @@ void CDisplay::SetFrameLimit(int32 fps)
 
 void CDisplay::SetFullscreen(bool isFullscreen)
 {
-#ifndef PLATFORM_PS3
-	GLFWwindow* pWindow = static_cast<GLFWwindow*>(s_pNativeWindow);
-	if (!pWindow || isFullscreen == (glfwGetWindowMonitor(pWindow) != CF_NULL))
+	if (s_pWindow)
 	{
-		return;
+		s_pWindow->SetFullscreen(isFullscreen);
 	}
-
-	if (isFullscreen)
-	{
-		glfwGetWindowPos(pWindow, &s_WindowedRect[0], &s_WindowedRect[1]);
-		glfwGetWindowSize(pWindow, &s_WindowedRect[2], &s_WindowedRect[3]);
-		GLFWmonitor* pMonitor = glfwGetPrimaryMonitor();
-		const GLFWvidmode* pMode = glfwGetVideoMode(pMonitor);
-		glfwSetWindowMonitor(
-			pWindow,
-			pMonitor,
-			0,
-			0,
-			pMode->width,
-			pMode->height,
-			pMode->refreshRate);
-	}
-	else
-	{
-		glfwSetWindowMonitor(
-			pWindow,
-			CF_NULL,
-			s_WindowedRect[0],
-			s_WindowedRect[1],
-			s_WindowedRect[2],
-			s_WindowedRect[3],
-			0);
-	}
-
-	glfwSwapInterval(s_IsVSync ? 1 : 0);
-#endif // !PLATFORM_PS3
 }
 
 bool CDisplay::IsFullscreen()
 {
-#ifndef PLATFORM_PS3
-	GLFWwindow* pWindow = static_cast<GLFWwindow*>(s_pNativeWindow);
-
-	return pWindow && glfwGetWindowMonitor(pWindow) != CF_NULL;
-#else // !PLATFORM_PS3
-	return false;
-#endif // PLATFORM_PS3
+	return s_pWindow && s_pWindow->IsFullscreen();
 }
 
-void CDisplay::SetNativeWindow(void* pWindow)
+void CDisplay::SetWindow(IWindow* pWindow)
 {
-	s_pNativeWindow = pWindow;
-#ifndef PLATFORM_PS3
-	GLFWwindow* pGLFWWindow = static_cast<GLFWwindow*>(pWindow);
-	if (pGLFWWindow)
-	{
-		glfwGetWindowPos(pGLFWWindow, &s_WindowedRect[0], &s_WindowedRect[1]);
-		glfwGetWindowSize(pGLFWWindow, &s_WindowedRect[2], &s_WindowedRect[3]);
-	}
-#endif // !PLATFORM_PS3
+	s_pWindow = pWindow;
 }
 
 void CDisplay::WaitForFrame()
 {
-#ifndef PLATFORM_PS3
 	if (s_FrameLimit <= 0)
 	{
 		s_FrameDeadline = CTime::GetTimeSinceStartup();
@@ -123,26 +67,20 @@ void CDisplay::WaitForFrame()
 
 	while (now < s_FrameDeadline)
 	{
-		if (s_FrameDeadline - now > s_FrameWaitThreshold)
+		if (s_pWindow && s_FrameDeadline - now > s_FrameWaitThreshold)
 		{
-			glfwWaitEventsTimeout(
+			s_pWindow->WaitEvents(
 				s_FrameDeadline - now - s_FrameWaitMargin);
 		}
 
 		now = CTime::GetTimeSinceStartup();
 	}
-#endif // !PLATFORM_PS3
 }
 
 void CDisplay::CloseWindow()
 {
-#ifndef PLATFORM_PS3
-	if (s_pNativeWindow)
+	if (s_pWindow)
 	{
-		glfwSetWindowShouldClose(
-			static_cast<GLFWwindow*>(s_pNativeWindow),
-			GLFW_TRUE);
+		s_pWindow->RequestClose();
 	}
-#endif // !PLATFORM_PS3
 }
-
