@@ -123,6 +123,16 @@ static void WrenBindForward_CUI_getViewportHeight_0param(WrenVM* pVM)
 	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<CUI>::s_pInstance->GetViewportHeight()));
 }
 
+static void WrenBindForward_CUI_getScreenWidth_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<CUI>::s_pInstance->GetScreenWidth()));
+}
+
+static void WrenBindForward_CUI_getScreenHeight_0param(WrenVM* pVM)
+{
+	wrenSetSlotDouble(pVM, 0, static_cast<float64>(CWrenBindSingleton<CUI>::s_pInstance->GetScreenHeight()));
+}
+
 static void WrenBindForward_CUI_setReferenceResolution_2param(WrenVM* pVM)
 {
 	(void)pVM;
@@ -1739,6 +1749,8 @@ BindingEntry_t s_GeneratedBindings[] =
 	BIND("CTexture", "getData", WrenBindForward_CTexture_getData_0param, false),
 	BIND("CUI", "getViewportWidth()", WrenBindForward_CUI_getViewportWidth_0param, true),
 	BIND("CUI", "getViewportHeight()", WrenBindForward_CUI_getViewportHeight_0param, true),
+	BIND("CUI", "getScreenWidth()", WrenBindForward_CUI_getScreenWidth_0param, true),
+	BIND("CUI", "getScreenHeight()", WrenBindForward_CUI_getScreenHeight_0param, true),
 	BIND("CUI", "setReferenceResolution(_,_)", WrenBindForward_CUI_setReferenceResolution_2param, true),
 	BIND("CUI", "clearReferenceResolution()", WrenBindForward_CUI_clearReferenceResolution_0param, true),
 	BIND("CUI", "setDrawColor(_)", WrenBindForward_CUI_setDrawColor_1param, true),

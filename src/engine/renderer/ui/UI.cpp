@@ -146,6 +146,16 @@ uint32 CUI::GetViewportHeight() const
 	return m_Batch.GetViewportHeight();
 }
 
+uint32 CUI::GetScreenWidth() const
+{
+	return m_Batch.GetViewportWidth();
+}
+
+uint32 CUI::GetScreenHeight() const
+{
+	return m_Batch.GetViewportHeight();
+}
+
 void CUI::SetReferenceResolution(float32 width, float32 height)
 {
 	if (width <= 0.0f || height <= 0.0f)

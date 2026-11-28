@@ -59,6 +59,10 @@ public:
 		WREN_BIND_SINGLETON("getViewportWidth()", s_pGUI);
 	uint32 GetViewportHeight() const
 		WREN_BIND_SINGLETON("getViewportHeight()", s_pGUI);
+	uint32 GetScreenWidth() const
+		WREN_BIND_SINGLETON("getScreenWidth()", s_pGUI);
+	uint32 GetScreenHeight() const
+		WREN_BIND_SINGLETON("getScreenHeight()", s_pGUI);
 
 	void SetReferenceResolution(
 		float32 width,

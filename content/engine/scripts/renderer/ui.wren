@@ -13,6 +13,8 @@ class Anchor_t {
 class CUI {
   foreign static getViewportWidth()
   foreign static getViewportHeight()
+  foreign static getScreenWidth()
+  foreign static getScreenHeight()
 
   foreign static setReferenceResolution(width, height)
   foreign static clearReferenceResolution()
