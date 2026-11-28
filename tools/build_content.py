@@ -37,8 +37,14 @@ class BuildContent:
             if path.suffix in SHADER_SOURCE_SUFFIXES
         ]
 
-        if not is_outdated([stamp], sources):
+        extra_dirs = "\n".join(str(directory) for directory in self._extra_shader_dirs)
+        is_same_dirs = stamp.is_file() and stamp.read_text() == extra_dirs
+        if is_same_dirs and not is_outdated([stamp], sources):
             return True
+
+        if stamp.is_file() and not is_same_dirs:
+            shutil.rmtree(self._build_dir / "shaders" / "cg", ignore_errors=True)
+            shutil.rmtree(self._build_dir / "shaders" / "glsl", ignore_errors=True)
 
         print("Compiling shaders...", flush=True)
         command = [sys.executable, str(shaders_dir / "compile_shaders.py")]
@@ -51,7 +57,7 @@ class BuildContent:
 
             return False
 
-        stamp.touch()
+        stamp.write_text(extra_dirs)
 
         return True
 
